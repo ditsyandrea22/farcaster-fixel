@@ -99,8 +99,19 @@ export function MiniApp() {
         setError('No FarCaster account found for this wallet')
       }
     } catch (err) {
-      console.error('Error looking up FID:', err)
-      setError('Failed to look up FarCaster account')
+      if (err instanceof Error) {
+        if (err.message === 'API_LIMIT_REACHED') {
+          setError('API limit reached. Please upgrade your Neynar plan or try again later.')
+        } else if (err.message === 'RATE_LIMIT_EXCEEDED') {
+          setError('Rate limit exceeded. Please try again later.')
+        } else {
+          console.error('Error looking up FID:', err)
+          setError('Failed to look up FarCaster account')
+        }
+      } else {
+        console.error('Error looking up FID:', err)
+        setError('Failed to look up FarCaster account')
+      }
     } finally {
       setLookingUpFid(false)
     }

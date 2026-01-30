@@ -39,12 +39,27 @@ export async function getFidFromAddress(address: string): Promise<FidLookupResul
     const response = await fetch(`/api/fid-from-address?address=${address}`)
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      
+      // Handle 402 Payment Required
+      if (response.status === 402) {
+        throw new Error('API_LIMIT_REACHED')
+      }
+      
+      // Handle 429 Rate Limit
+      if (response.status === 429) {
+        throw new Error('RATE_LIMIT_EXCEEDED')
+      }
+      
       console.error('Failed to fetch FID from address:', response.statusText)
       return null
     }
 
     return await response.json()
   } catch (error) {
+    if (error instanceof Error && (error.message === 'API_LIMIT_REACHED' || error.message === 'RATE_LIMIT_EXCEEDED')) {
+      throw error // Re-throw for special handling
+    }
     console.error('Error fetching FID from address:', error)
     return null
   }

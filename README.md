@@ -303,6 +303,33 @@ docker run -p 3000:3000 \
 - Check API rate limits (free tier: 100 req/min)
 - Ensure FID is valid and public
 
+#### 402 Payment Required Error
+
+If you see `402 (Payment Required)` when fetching FID from address:
+
+1. **Check your Neynar plan** - The free tier has limited API calls
+2. **Upgrade your plan** at [Neynar Developer Dashboard](https://neynar.com/developer)
+3. **Or wait** for the rate limit to reset (usually hourly/daily depending on your plan)
+
+#### "The source has not been authorized yet" Error
+
+If you see `The source https://your-domain.vercel.app/ has not been authorized yet`:
+
+1. Go to [Neynar Developer Dashboard](https://neynar.com/developer)
+2. Navigate to your application settings
+3. Add your domain to the "Authorized Domains" or "Allowed Origins" list
+4. For local development, add `localhost:3000` to allowed origins
+5. Deploy and test again
+
+#### Common Error Messages
+
+| Error | Solution |
+|-------|----------|
+| `API_LIMIT_REACHED` | Upgrade Neynar plan or wait for reset |
+| `RATE_LIMIT_EXCEEDED` | Wait and retry request |
+| `Source not authorized` | Add domain to Neynar dashboard |
+| `NEYNAR_API_KEY not set` | Set `NEXT_PUBLIC_NEYNAR_API_KEY` in `.env.local` |
+
 ### Contract Interaction Fails
 
 - Confirm contract address is correct on Base mainnet

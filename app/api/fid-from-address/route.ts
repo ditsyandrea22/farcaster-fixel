@@ -56,6 +56,23 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       console.error('Neynar API error:', response.statusText)
+      
+      // Handle 402 Payment Required / Rate Limit
+      if (response.status === 402) {
+        return NextResponse.json(
+          { error: 'API usage limit reached. Please upgrade your Neynar plan or try again later.' },
+          { status: 402 }
+        )
+      }
+      
+      // Handle 429 Rate Limit
+      if (response.status === 429) {
+        return NextResponse.json(
+          { error: 'Rate limit exceeded. Please try again later.' },
+          { status: 429 }
+        )
+      }
+      
       return NextResponse.json(
         { error: 'Failed to fetch user data from Neynar' },
         { status: response.status }
