@@ -261,6 +261,9 @@ export function MiniApp() {
   const handleGenerate = async () => {
     setIsGenerating(true)
     setError(null)
+    setSuccess(false)
+    setTxHash(null)
+    setIsGenerated(false)
     
     if (!walletAddress) {
       setError('Wallet not connected')
@@ -284,21 +287,35 @@ export function MiniApp() {
     const imageUrl = fid ? `/api/nft-image?fid=${fid}&rarity=${walletRarity}` : `/api/nft-image?address=${walletAddress}&rarity=${walletRarity}`
     setNftImageUrl(imageUrl)
 
-    // Now directly mint the NFT
+    // Now directly mint the NFT - writeContract triggers wallet approval
     try {
-      const effectiveFid = getEffectiveFid()
+      console.log('🚀 Starting NFT mint...')
+      console.log('Contract:', NFT_CONTRACT_ADDRESS)
+      console.log('Value:', MINT_PRICE, 'ETH')
+      
       const hash = await writeContract({
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
         abi: NFT_ABI,
         functionName: 'mint',
         value: parseEther(MINT_PRICE),
       })
-      setTxHash(hash || null)
+      
+      console.log('✅ Transaction submitted:', hash)
+      setTxHash(hash)
+      // isGenerating stays true until isConfirmed
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Mint failed')
+      console.error('❌ Mint failed:', err)
+      setError(err instanceof Error ? err.message : 'Mint failed - Please check your wallet')
       setIsGenerating(false)
     }
   }
+
+  // Reset isGenerating when transaction completes
+  useEffect(() => {
+    if (isConfirmed || isTxError) {
+      setIsGenerating(false)
+    }
+  }, [isConfirmed, isTxError])
 
   // Reset and try your luck again
   const handleRegenerate = () => {
