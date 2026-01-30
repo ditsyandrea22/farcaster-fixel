@@ -525,7 +525,7 @@ export function MiniApp() {
                       Mint NFT ({MINT_PRICE} ETH)
                     </span>
                   )}
-              </Button>}
+              </Button>
 
             <Button
               onClick={() => disconnect()}
