@@ -148,11 +148,13 @@ export function MiniApp() {
   }, [isConfirmed, isTxError, confirmError, walletAddress])
 
   const handleMint = async () => {
-    if (!walletAddress || !fid) {
-      setError('Wallet not connected or FID not available')
+    if (!walletAddress) {
+      setError('Wallet not connected')
       return
     }
 
+    const effectiveFid = getEffectiveFid()
+    
     if (hasMinted) {
       setError('You have already minted an NFT with this wallet')
       return
@@ -163,11 +165,12 @@ export function MiniApp() {
     setTxHash(null)
 
     try {
+      const effectiveFid = getEffectiveFid()
       const hash = await writeContract({
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
         abi: NFT_ABI,
         functionName: 'mint',
-        args: [BigInt(fid)],
+        args: [BigInt(effectiveFid)],
         value: parseEther(MINT_PRICE),
       })
       setTxHash(hash || null)
@@ -185,6 +188,17 @@ export function MiniApp() {
       hash = hash & hash
     }
     return Math.abs(hash) % 20000 + 1
+  }
+
+  // Get effective FID - use SDK FID or derive from wallet address
+  const getEffectiveFid = (): number => {
+    if (fid && fid > 0) {
+      return fid
+    }
+    if (walletAddress) {
+      return hashAddress(walletAddress)
+    }
+    return 0
   }
 
   const resetAndRetry = useCallback(() => {

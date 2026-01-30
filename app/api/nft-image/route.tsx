@@ -195,6 +195,16 @@ export async function GET(request: NextRequest) {
       `,
     } : {}
 
+    // Safe color handling
+    const getColor = (colorValue: string | { toString(): string }, fallback: string) => {
+      if (typeof colorValue === 'string') return colorValue
+      try {
+        return colorValue.toString()
+      } catch {
+        return fallback
+      }
+    }
+
     const response = new ImageResponse(
       (
         <div
@@ -205,7 +215,7 @@ export async function GET(request: NextRequest) {
             justifyContent: 'center',
             width: '1200px',
             height: '1200px',
-            background: colors.bgGradient,
+            background: getColor(colors.bgGradient, '#f3f4f6'),
             fontFamily: 'system-ui, -apple-system',
             position: 'relative',
             overflow: 'hidden',
