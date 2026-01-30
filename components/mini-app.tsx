@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAccount, useConnect, useDisconnect, useWriteContract } from 'wagmi'
+import { sdk } from '@farcaster/miniapp-sdk'
+import { useAccount, useConnect, useDisconnect, useWriteContract, useSwitchChain } from 'wagmi'
 import { parseEther } from 'viem'
 import { config } from '@/lib/wagmi'
+import { base } from 'wagmi/chains'
 import { NFT_ABI } from '@/lib/contractAbi'
 import { getUserProfile, type UserProfile, getFidFromAddress, generateNftImageUrl } from '@/lib/neynar'
 import { Button } from '@/components/ui/button'
@@ -23,10 +25,27 @@ export function MiniApp() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  const { address, isConnected } = useAccount()
-  const { connect, connectors } = useConnect()
+  const { address, isConnected, chainId } = useAccount()
+  const { connect, connectors, isPending: isConnecting, error: connectError } = useConnect()
   const { disconnect } = useDisconnect()
   const { writeContract, isPending } = useWriteContract()
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain()
+  
+  // Check if user is on the wrong network
+  const isWrongNetwork = isConnected && chainId && chainId !== base.id
+
+  // Initialize SDK and signal that app is ready
+  useEffect(() => {
+    const initSdk = async () => {
+      try {
+        // Wait for any initial setup
+        await sdk.actions.ready()
+      } catch (err) {
+        console.error('Failed to call sdk.actions.ready():', err)
+      }
+    }
+    initSdk()
+  }, [])
 
   // Extract FID from URL or auto-lookup from wallet
   useEffect(() => {
@@ -209,17 +228,40 @@ export function MiniApp() {
           {!isConnected ? (
             <div className="space-y-3">
               <p className="text-gray-700 font-medium mb-4">Connect Wallet</p>
-              {connectors.map((connector) => (
-                <Button
-                  key={connector.uid}
-                  onClick={() => connect({ connector })}
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white flex items-center justify-center gap-2 font-medium"
-                  size="lg"
-                >
-                  <Wallet size={18} />
-                  {connector.name}
-                </Button>
-              ))}
+              
+              {connectError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex gap-2">
+                  <AlertCircle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-red-700 text-sm">
+                    {connectError.message.includes('no matching chain')
+                      ? 'Please switch to Base network in your wallet'
+                      : connectError.message}
+                  </p>
+                </div>
+              )}
+
+              {connectors
+                .filter((connector) => connector.id !== 'io.metamask' || typeof window !== 'undefined')
+                .map((connector) => (
+                  <Button
+                    key={connector.uid}
+                    onClick={() => connect({ connector })}
+                    disabled={isConnecting}
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white flex items-center justify-center gap-2 font-medium disabled:opacity-50"
+                    size="lg"
+                  >
+                    {isConnecting && connectors.some(c => c.uid === connector.uid) ? (
+                      <Loader2 className="animate-spin" size={18} />
+                    ) : (
+                      <Wallet size={18} />
+                    )}
+                    {connector.name}
+                  </Button>
+                ))}
+
+                <p className="text-center text-gray-500 text-xs mt-4">
+                  Make sure you have a wallet installed
+                </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -248,6 +290,30 @@ export function MiniApp() {
               <p className="text-gray-600 text-xs mt-1">ETH on Base Mainnet</p>
             </div>
 
+            {isWrongNetwork && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex gap-2 mb-3">
+                  <AlertCircle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-amber-700 text-sm">Wrong network detected</p>
+                </div>
+                <Button
+                  onClick={() => switchChain({ chainId: base.id })}
+                  disabled={isSwitchingChain}
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                  size="sm"
+                >
+                  {isSwitchingChain ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2" size={16} />
+                      Switching...
+                    </>
+                  ) : (
+                    'Switch to Base Mainnet'
+                  )}
+                </Button>
+              </div>
+            )}
+
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex gap-2">
                 <AlertCircle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
@@ -264,7 +330,7 @@ export function MiniApp() {
 
             <Button
               onClick={handleMint}
-              disabled={isPending || !isConnected || loading}
+              disabled={isPending || !isConnected || loading || isWrongNetwork}
               className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-6 text-base disabled:opacity-50 transition-all"
               size="lg"
             >
