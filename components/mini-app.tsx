@@ -324,7 +324,7 @@ export function MiniApp() {
             </div>
             
             <h1 className="text-2xl font-mono font-bold text-foreground mb-1">
-              <span className="text-primary">></span> NFT Minted!
+              <span className="text-primary">&gt;</span> NFT Minted!
             </h1>
             <p className="text-muted-foreground text-sm font-mono">You have already claimed your AI NFT</p>
           </div>
