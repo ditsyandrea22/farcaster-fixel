@@ -61,9 +61,10 @@ export function MiniApp() {
   // Check if Base chain is supported by the mini app
   const isBaseSupported = capabilities?.supportedChains?.some?.((chain: { id: number }) => chain.id === BASE_CHAIN_ID) ?? true
 
-  // Set FID from user context (new SDK)
+  // Set FID from user context (new SDK) - priority source
   useEffect(() => {
     if (userContext?.fid) {
+      console.log('FID from SDK context:', userContext.fid)
       setFid(userContext.fid)
     }
   }, [userContext])
@@ -76,27 +77,50 @@ export function MiniApp() {
     if (urlFid && !fid) {
       const parsed = parseInt(urlFid, 10)
       if (!isNaN(parsed) && parsed > 0) {
+        console.log('FID from URL:', parsed)
         setFid(parsed)
       }
     }
   }, [fid])
 
-  // Auto-lookup FID from wallet address when wallet connects
+  // Auto-lookup FID from wallet address only when SDK context is NOT available
   useEffect(() => {
-    if (isConnected && address && !fid) {
+    // Only lookup if:
+    // 1. Wallet is connected
+    // 2. We have an address
+    // 3. No FID from SDK or URL yet
+    // 4. Not already looking up
+    // 5. Not in mini app (SDK should provide FID)
+    const needsLookup = isConnected && address && !fid && !lookingUpFid && !isInMiniApp
+    
+    if (needsLookup) {
+      console.log('Wallet connected, no SDK FID, falling back to Neynar lookup for:', address)
       lookupFidFromWallet()
+    } else if (!fid && !lookingUpFid && isInMiniApp) {
+      // In mini app but no FID from SDK - this is an error state
+      console.log('In mini app but no FID from SDK')
+      setError('Could not retrieve your FarCaster ID. Please try reopening the mini app.')
     }
-  }, [isConnected, address, fid])
+  }, [isConnected, address, fid, lookingUpFid, isInMiniApp])
 
   const lookupFidFromWallet = async () => {
     if (!address) return
     setLookingUpFid(true)
+    setError(null)
     try {
+      console.log('Starting FID lookup for:', address)
       const result = await getFidFromAddress(address)
       if (result) {
+        console.log('FID found:', result.fid)
         setFid(result.fid)
       } else {
-        setError('No FarCaster account found for this wallet')
+        console.log('No FID found for address:', address)
+        // Provide a more helpful message
+        setError(
+          isInMiniApp 
+            ? 'Could not retrieve your FarCaster ID. Please try reconnecting.'
+            : 'No FarCaster account linked to this wallet. Make sure your wallet is connected to the address you use on FarCaster.'
+        )
       }
     } catch (err) {
       if (err instanceof Error) {
@@ -106,11 +130,11 @@ export function MiniApp() {
           setError('Rate limit exceeded. Please try again later.')
         } else {
           console.error('Error looking up FID:', err)
-          setError('Failed to look up FarCaster account')
+          setError('Failed to look up FarCaster account. Please check your connection and try again.')
         }
       } else {
         console.error('Error looking up FID:', err)
-        setError('Failed to look up FarCaster account')
+        setError('Failed to look up FarCaster account. Please check your connection and try again.')
       }
     } finally {
       setLookingUpFid(false)
@@ -241,6 +265,32 @@ export function MiniApp() {
                   ? 'No FarCaster account linked to this wallet'
                   : 'Connect your wallet to get started'}
               </p>
+              
+              {/* Error Message with Retry Button */}
+              {error && isConnected && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm mb-2">{error}</p>
+                  <Button
+                    onClick={lookupFidFromWallet}
+                    disabled={lookingUpFid}
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-red-300 text-red-700 hover:bg-red-100"
+                  >
+                    {lookingUpFid ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2" size={14} />
+                        Looking up...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw size={14} className="mr-2" />
+                        Retry Lookup
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
               
               {/* Chain Support Warning */}
               {!isBaseSupported && (
