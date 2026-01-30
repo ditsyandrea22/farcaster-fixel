@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRateLimitResult, defaultConfig } from '@/lib/rate-limit'
 
-const NEYNAR_API_KEY = process.env.NEXT_PUBLIC_NEYNAR_API_KEY
+const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY
 
 if (!NEYNAR_API_KEY) {
   console.error('NEYNAR_API_KEY is not configured')
