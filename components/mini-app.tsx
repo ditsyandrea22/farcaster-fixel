@@ -1,19 +1,19 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther } from 'viem'
 import { config } from '@/lib/wagmi'
 import { base } from 'wagmi/chains'
 import { NFT_ABI } from '@/lib/contractAbi'
-import { 
-  useInitializeSdk, 
+import { useInitializeSdk, 
   useMiniAppDetection, 
   useUserContext, 
   useFarcasterWallet, 
   useChainCapabilities,
   formatAddress 
 } from '@/lib/farcaster-sdk'
+import useWallet from '@/hooks/useWallet'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -88,11 +88,22 @@ export function MiniApp() {
   const [fortuneMessage, setFortuneMessage] = useState<string>('')
   const [revealedRarity, setRevealedRarity] = useState<RarityTier | null>(null)
 
-  // Wallet State using wagmi
-  const { address: walletAddress, isConnected, chainId } = useAccount()
-  const { connect, connectors, isPending: isConnecting, error: connectError } = useConnect()
-  const { disconnect } = useDisconnect()
-  const { writeContract, isPending: isWritingContract, error: writeError } = useWriteContract()
+  // Wallet State using our custom hook with gas estimation
+  const { 
+    address: walletAddress, 
+    isConnected, 
+    chainId,
+    writeContractWithGas,
+    isWritingContract,
+    writeError,
+    gasEstimate,
+    isEstimatingGas,
+    gasEstimateError,
+    connect,
+    connectors,
+    isConnecting,
+    disconnect,
+  } = useWallet()
   
   // Wait for transaction confirmation
   const { isLoading: isConfirming, isSuccess: isConfirmed, isError: isTxError, error: confirmError } = 
@@ -167,7 +178,7 @@ export function MiniApp() {
 
     try {
       const effectiveFid = getEffectiveFid()
-      const hash = await writeContract({
+      const hash = await writeContractWithGas({
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
         abi: NFT_ABI,
         functionName: 'mint',
@@ -293,8 +304,9 @@ export function MiniApp() {
       console.log('🚀 Starting NFT mint...')
       console.log('Contract:', NFT_CONTRACT_ADDRESS)
       console.log('Value:', MINT_PRICE, 'ETH')
+      console.log('Gas Estimate:', gasEstimate?.toString() || 'Estimating...')
       
-      const hash = await writeContract({
+      const hash = await writeContractWithGas({
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
         abi: NFT_ABI,
         functionName: 'mint',

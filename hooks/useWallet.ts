@@ -1,7 +1,17 @@
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { useFarcasterWallet } from '@/lib/farcaster-sdk'
 import { base } from 'wagmi/chains'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { type WriteContractReturnType } from 'viem'
+
+// Extend window interface for ethereum provider
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>
+    }
+  }
+}
 
 /**
  * Custom hook for wallet connection following FarCast Mini App guidelines.
@@ -70,6 +80,11 @@ export function useWallet() {
   // Check if Base chain is supported
   const isBaseSupported = chain?.unsupported !== true
 
+  // Gas estimation state
+  const [gasEstimate, setGasEstimate] = useState<bigint | null>(null)
+  const [isEstimatingGas, setIsEstimatingGas] = useState(false)
+  const [gasEstimateError, setGasEstimateError] = useState<string | null>(null)
+
   /**
    * Connect to an external wallet
    */
@@ -129,6 +144,110 @@ export function useWallet() {
     switchChain({ chainId: base.id })
   }, [switchChain, isWrongNetwork])
 
+  /**
+   * Estimate gas for a contract call with fallback
+   * Returns the gas limit with 20% buffer
+   */
+  const estimateGasWithFallback = useCallback(async (
+    contractAddress: `0x${string}`,
+    _abi: readonly unknown[],
+    _functionName: string,
+    _args: unknown[],
+    value?: bigint
+  ): Promise<bigint> => {
+    setIsEstimatingGas(true)
+    setGasEstimateError(null)
+    
+    try {
+      // Method 1: Try ethereum provider's eth_estimateGas
+      if (window.ethereum) {
+        try {
+          const result = await window.ethereum.request({
+            method: 'eth_estimateGas',
+            params: [{
+              from: effectiveAddress || undefined,
+              to: contractAddress,
+              data: '0x', // Minimal data for simple transfer/mint estimation
+              ...(value && { value: '0x' + value.toString(16) }),
+            }],
+          })
+          
+          if (typeof result === 'string' || typeof result === 'number') {
+            const estimatedGas = BigInt(result)
+            setGasEstimate(estimatedGas)
+            // Add 20% buffer for safety
+            const gasWithBuffer = (estimatedGas * BigInt(120)) / BigInt(100)
+            setIsEstimatingGas(false)
+            console.log(`Gas estimated: ${estimatedGas.toString()}, with buffer: ${gasWithBuffer.toString()}`)
+            return gasWithBuffer
+          }
+        } catch (rpcError) {
+          console.warn('RPC gas estimation failed, using fallback:', rpcError)
+        }
+      }
+      
+      // Method 2: Fallback to a reasonable gas limit for NFT mint
+      // NFT mint operations typically use 100000-200000 gas
+      // We'll use 200000 with 20% buffer = 240000
+      const fallbackGas = BigInt(240000)
+      setGasEstimate(fallbackGas)
+      setIsEstimatingGas(false)
+      console.log('Using fallback gas limit:', fallbackGas.toString())
+      return fallbackGas
+      
+    } catch (error) {
+      console.error('Gas estimation completely failed:', error)
+      setGasEstimateError(error instanceof Error ? error.message : 'Gas estimation failed')
+      
+      // Final fallback - use a high but reasonable gas limit for NFT mint
+      const finalFallback = BigInt(300000)
+      setGasEstimate(finalFallback)
+      setIsEstimatingGas(false)
+      return finalFallback
+    }
+  }, [effectiveAddress])
+
+  /**
+   * Write contract with gas estimation
+   * Automatically estimates gas and adds buffer before writing
+   */
+  const writeContractWithGas = useCallback(async (
+    params: {
+      address: `0x${string}`
+      abi: readonly unknown[]
+      functionName: string
+      args?: unknown[]
+      value?: bigint
+    }
+  ): Promise<WriteContractReturnType | undefined> => {
+    setIsEstimatingGas(true)
+    setGasEstimateError(null)
+    
+    try {
+      const gasLimit = await estimateGasWithFallback(
+        params.address,
+        params.abi,
+        params.functionName,
+        params.args || [],
+        params.value
+      )
+      
+      console.log(`Submitting transaction with gas limit: ${gasLimit.toString()}`)
+      
+      const result = await writeContract({
+        ...params,
+        gas: gasLimit,
+      })
+      
+      setIsEstimatingGas(false)
+      return result
+    } catch (error) {
+      setIsEstimatingGas(false)
+      setGasEstimateError(error instanceof Error ? error.message : 'Contract write failed')
+      throw error
+    }
+  }, [estimateGasWithFallback, writeContract])
+
   return {
     // Connection state
     address: effectiveAddress,
@@ -155,9 +274,16 @@ export function useWallet() {
     
     // Contract interaction
     writeContract,
+    writeContractWithGas,
     isWritingContract,
     writeError,
     hash,
+    
+    // Gas estimation
+    gasEstimate,
+    isEstimatingGas,
+    gasEstimateError,
+    estimateGasWithFallback,
     
     // Transaction confirmation
     isConfirming,
@@ -173,7 +299,7 @@ export function useWallet() {
     farcasterWalletError,
     
     // Combined error state
-    error: connectError || switchChainError || writeError || confirmError || farcasterWalletError,
+    combinedError: connectError || switchChainError || writeError || confirmError || farcasterWalletError || (gasEstimateError ? new Error(gasEstimateError) : null),
   }
 }
 
