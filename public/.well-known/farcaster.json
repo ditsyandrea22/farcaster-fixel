@@ -32,7 +32,7 @@
     "primaryCategory": "art-creativity",
     "tags": ["farcaster", "nft", "pixel", "fid", "base"],
 
-    "splashImageUrl": "https://farcaster-fixel.vercel.app/splash.png?v=2",
+    "splashImageUrl": "https://farcaster-fixel.vercel.app/splash.svg?v=2",
     "splashBackgroundColor": "#0F172A",
 
     "heroImageUrl": "https://farcaster-fixel.vercel.app/hero.png?v=2",

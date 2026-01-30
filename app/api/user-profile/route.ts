@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRateLimitResult, defaultConfig } from '@/lib/rate-limit'
+import { parseFid, validateFid, createFidDebugReport } from '@/lib/fid-utils'
 
 const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY
 
 if (!NEYNAR_API_KEY) {
-  console.error('NEYNAR_API_KEY is not configured')
+  console.error('NEYNAR_API_KEY is not configured. Please set NEYNAR_API_KEY in your environment variables.')
 }
 
 export async function GET(request: NextRequest) {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
+        { error: 'Too many requests. Please try again later.' }, 
         { 
           status: 429,
           headers: {
@@ -30,15 +31,29 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const fid = request.nextUrl.searchParams.get('fid')
+    const fidParam = request.nextUrl.searchParams.get('fid')
 
-    if (!fid) {
-      return NextResponse.json({ error: 'FID is required' }, { status: 400 })
+    // Debug FID input
+    console.log('FID parameter received:', fidParam)
+    const debugReport = createFidDebugReport(fidParam, { source: 'user-profile-api' })
+    console.log('FID debug report:', JSON.stringify(debugReport, null, 2))
+
+    // Parse and validate FID
+    const fid = parseFid(fidParam)
+    
+    if (fid === null) {
+      const validation = validateFid(fidParam)
+      return NextResponse.json(
+        { error: validation.error || 'FID is required and must be a positive integer' }, 
+        { status: 400 }
+      )
     }
 
     if (!NEYNAR_API_KEY) {
       return NextResponse.json({ error: 'Server configuration error: NEYNAR_API_KEY not set' }, { status: 500 })
     }
+
+    console.log(`Fetching user profile for FID: ${fid}`)
 
     const response = await fetch(
       `https://api.neynar.com/v2/farcaster/user/by_fid?fid=${fid}`,
