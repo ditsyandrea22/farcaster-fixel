@@ -14,9 +14,10 @@ import {
   useChainCapabilities,
   formatAddress 
 } from '@/lib/farcaster-sdk'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, Star, Crown, Gem, Dice } from 'lucide-react'
+import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, Star, Crown, Gem, Dice, ArrowLeft } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
 
 const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x955e339e27d2689b95BfB25C5e2Bce2223321cAA'
@@ -257,7 +258,7 @@ export function MiniApp() {
     return tierMessages[Math.floor(Math.random() * tierMessages.length)]
   }
 
-  // Generate NFT based on luck (kehokian) - then directly mint
+  // Generate NFT based on luck (hoki) - then directly mint
   const handleGenerate = async () => {
     setIsGenerating(true)
     setError(null)
@@ -329,7 +330,17 @@ export function MiniApp() {
   // Show loading while SDK is initializing
   if (!sdkReady || isDetectingMiniApp) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-terminal-dark">
+      <div className="min-h-screen bg-terminal-dark">
+        {/* Back Button */}
+        <div className="sticky top-0 z-50 backdrop-blur-sm border-b border-border/50 bg-terminal-dark/95">
+          <div className="max-w-md mx-auto px-4 h-12 flex items-center">
+            <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-mono text-sm">
+              <ArrowLeft size={16} />
+              cd ..
+            </Link>
+          </div>
+        </div>
+        <div className="flex items-center justify-center min-h-[calc(100vh-48px)]">
         <Card className="w-full max-w-md p-8 text-center terminal-box">
           <div className={styles.pixelLoaderTerminal}></div>
           <p className="text-foreground mt-6 font-mono font-medium">Initializing...</p>
@@ -340,14 +351,25 @@ export function MiniApp() {
             <p className="animation-delay-200">&gt; Preparing environment...</p>
           </div>
         </Card>
-      </div>
-    )
-  }
+        </div>
+        </div>
+      )
+    }
 
   // Not connected state
   if (!walletAddress) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-terminal-dark">
+      <div className="min-h-screen bg-terminal-dark">
+        {/* Back Button */}
+        <div className="sticky top-0 z-50 backdrop-blur-sm border-b border-border/50 bg-terminal-dark/95">
+          <div className="max-w-md mx-auto px-4 h-12 flex items-center">
+            <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-mono text-sm">
+              <ArrowLeft size={16} />
+              cd ..
+            </Link>
+          </div>
+        </div>
+        <div className="flex items-center justify-center min-h-[calc(100vh-48px)]">
         <Card className="w-full max-w-md p-6 text-center terminal-box">
           {/* Terminal Header */}
           <div className="flex items-center gap-2 mb-4 border-b border-border/50 pb-3">
@@ -420,14 +442,24 @@ export function MiniApp() {
             </p>
           </div>
         </Card>
-      </div>
-    )
-  }
+        </div>
+        </div>
+      )
+    }
 
   // Already minted state
   if (hasMinted) {
     return (
       <div className="min-h-screen bg-terminal-dark">
+        {/* Back Button */}
+        <div className="sticky top-0 z-50 backdrop-blur-sm border-b border-border/50 bg-terminal-dark/95">
+          <div className="max-w-md mx-auto px-4 h-12 flex items-center">
+            <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-mono text-sm">
+              <ArrowLeft size={16} />
+              cd ..
+            </Link>
+          </div>
+        </div>
         <div className="max-w-md mx-auto">
           {/* Terminal Header */}
           <div className="text-center mb-6 mt-4">
@@ -509,6 +541,15 @@ export function MiniApp() {
   if (walletAddress && !isGenerated && !success) {
     return (
       <div className="min-h-screen bg-terminal-dark">
+        {/* Back Button */}
+        <div className="sticky top-0 z-50 backdrop-blur-sm border-b border-border/50 bg-terminal-dark/95">
+          <div className="max-w-md mx-auto px-4 h-12 flex items-center">
+            <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-mono text-sm">
+              <ArrowLeft size={16} />
+              cd ..
+            </Link>
+          </div>
+        </div>
         <div className="max-w-md mx-auto">
           {/* Terminal Header */}
           <div className="text-center mb-6 mt-4">
@@ -526,7 +567,7 @@ export function MiniApp() {
             <h1 className="text-2xl font-mono font-bold text-foreground mb-1">
               <span className="text-primary">&gt;</span> Reveal Your Luck
             </h1>
-            <p className="text-muted-foreground text-sm font-mono">Generate your unique NFT based on kehokian!</p>
+            <p className="text-muted-foreground text-sm font-mono">Generate your unique NFT based on hoki!</p>
           </div>
 
           {/* Generate Card */}
@@ -604,6 +645,15 @@ export function MiniApp() {
   if (isGenerating) {
     return (
       <div className="min-h-screen bg-terminal-dark">
+        {/* Back Button */}
+        <div className="sticky top-0 z-50 backdrop-blur-sm border-b border-border/50 bg-terminal-dark/95">
+          <div className="max-w-md mx-auto px-4 h-12 flex items-center">
+            <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-mono text-sm">
+              <ArrowLeft size={16} />
+              cd ..
+            </Link>
+          </div>
+        </div>
         <div className="max-w-md mx-auto">
           <div className="text-center mb-6 mt-4">
             <div className="terminal-box p-3 mb-4">
@@ -645,6 +695,15 @@ export function MiniApp() {
     
     return (
       <div className="min-h-screen bg-terminal-dark">
+        {/* Back Button */}
+        <div className="sticky top-0 z-50 backdrop-blur-sm border-b border-border/50 bg-terminal-dark/95">
+          <div className="max-w-md mx-auto px-4 h-12 flex items-center">
+            <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-mono text-sm">
+              <ArrowLeft size={16} />
+              cd ..
+            </Link>
+          </div>
+        </div>
         <div className="max-w-md mx-auto">
           {/* Terminal Header */}
           <div className="text-center mb-6 mt-4">
@@ -782,6 +841,15 @@ export function MiniApp() {
   // Step 4: Success - Show minted NFT with full details
   return (
     <div className="min-h-screen bg-terminal-dark">
+      {/* Back Button */}
+      <div className="sticky top-0 z-50 backdrop-blur-sm border-b border-border/50 bg-terminal-dark/95">
+        <div className="max-w-md mx-auto px-4 h-12 flex items-center">
+          <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-mono text-sm">
+            <ArrowLeft size={16} />
+            cd ..
+          </Link>
+        </div>
+      </div>
       <div className="max-w-md mx-auto">
         {/* Terminal Header */}
         <div className="text-center mb-6 mt-4">

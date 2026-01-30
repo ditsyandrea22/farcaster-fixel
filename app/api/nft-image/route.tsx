@@ -16,6 +16,37 @@ const RARITY_TIERS = {
 export type RarityTier = keyof typeof RARITY_TIERS
 export const MAX_SUPPLY = 20000
 
+// Cryptographically secure random number generator (0-1)
+function cryptoRandom(): number {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint32Array(1)
+    crypto.getRandomValues(array)
+    return array[0] / (0xFFFFFFFF + 1)
+  }
+  // Fallback for Node.js
+  return Math.random()
+}
+
+// Generate truly random seed using Web Crypto API
+function generateRandomSeed(): number {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new BigUint64Array(1)
+    crypto.getRandomValues(array as unknown as Uint8Array)
+    return Number(array[0] % BigInt(1000000))
+  }
+  return Math.floor(Math.random() * 1000000)
+}
+
+// Mulberry32 - high quality PRNG for better distribution
+function mulberry32(seed: number): () => number {
+  return function() {
+    let t = seed += 0x6D2B79F5
+    t = Math.imul(t ^ t >>> 15, t | 1)
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61)
+    return ((t ^ t >>> 14) >>> 0) / 4294967296
+  }
+}
+
 // Seeded random number generator for deterministic results
 function seededRandom(seed: number): number {
   const x = Math.sin(seed) * 10000
@@ -38,9 +69,11 @@ function hashAddress(address: string): number {
   return Math.abs(hash)
 }
 
-// Determine rarity based on seeded random
+// Determine rarity based on seeded random using Mulberry32 for better distribution
 function determineRarity(seed: number): RarityTier {
-  const rand = seededRandom(seed) * 100
+  // Use Mulberry32 for better random distribution
+  const random = mulberry32(seed)()
+  const rand = random * 100
   
   let cumulative = 0
   const rates = [
@@ -67,6 +100,9 @@ function generatePixelPattern(seed: number, rarity: RarityTier): boolean[][] {
     .fill(null)
     .map(() => Array(gridSize).fill(false))
   
+  // Use Mulberry32 for better pattern distribution
+  const random = mulberry32(seed)
+  
   // Adjust density based on rarity
   const densityMultiplier = rarity === 'PLATINUM' ? 1.5 : rarity === 'GOLD' ? 1.3 : rarity === 'SILVER' ? 1.2 : 1
   
@@ -74,7 +110,7 @@ function generatePixelPattern(seed: number, rarity: RarityTier): boolean[][] {
     for (let j = 0; j < gridSize; j++) {
       const hash = (seed * (i + 1) * (j + 1) * 73856093) ^ ((seed >> 16) * 19349663)
       const threshold = 0.5 / densityMultiplier
-      pattern[i][j] = (hash & 1) === 1 && seededRandom(hash) > threshold
+      pattern[i][j] = (hash & 1) === 1 && random() > threshold
     }
   }
   
@@ -83,6 +119,9 @@ function generatePixelPattern(seed: number, rarity: RarityTier): boolean[][] {
 
 // Generate colors based on seed and rarity
 function generateColors(seed: number, rarity: RarityTier): { primary: string; secondary: string; accent: string; bgGradient: string } {
+  
+  // Use Mulberry32 for better color distribution
+  const random = mulberry32(seed)
   
   // Adjust saturation and lightness based on rarity
   const rarityBoost = rarity === 'PLATINUM' ? 40 : rarity === 'GOLD' ? 30 : rarity === 'SILVER' ? 20 : 0
@@ -163,17 +202,30 @@ export async function GET(request: NextRequest) {
 
     const fid = request.nextUrl.searchParams.get('fid')
     const address = request.nextUrl.searchParams.get('address')
+    const tokenId = request.nextUrl.searchParams.get('tokenId')
+    const randomize = request.nextUrl.searchParams.get('random') === 'true'
 
-    if (!fid && !address) {
+    if (!fid && !address && !tokenId) {
       return NextResponse.json({ error: 'FID or wallet address is required' }, { status: 400 })
     }
 
-    // Use FID if available, otherwise use address
-    const identifier = fid || address!
-    const walletDisplay = fid ? `FID ${fid}` : `${address!.slice(0, 6)}...${address!.slice(-4)}`
-
-    // Hash the identifier for deterministic results
-    const seed = fid ? hashFid(fid) : hashAddress(address!)
+    // Use FID if available, otherwise use address or generate random
+    let seed: number
+    let walletDisplay: string
+    
+    if (tokenId) {
+      seed = parseInt(tokenId, 10) || generateRandomSeed()
+      walletDisplay = `Token #${tokenId}`
+    } else if (randomize) {
+      seed = generateRandomSeed()
+      walletDisplay = fid ? `FID ${fid}` : `${address!.slice(0, 6)}...${address!.slice(-4)}`
+    } else if (fid) {
+      seed = hashFid(fid)
+      walletDisplay = `FID ${fid}`
+    } else {
+      seed = hashAddress(address!)
+      walletDisplay = `${address!.slice(0, 6)}...${address!.slice(-4)}`
+    }
 
     const rarity = determineRarity(seed)
     const tierProps = getTierProperties(rarity)
@@ -392,7 +444,7 @@ export async function GET(request: NextRequest) {
               fontFamily: 'monospace',
             }}
           >
-            AI GENERATED • {new Date().getFullYear()}
+            AI GENERATED • {new Date().getFullYear()} • {rarity}
           </div>
         </div>
       ),

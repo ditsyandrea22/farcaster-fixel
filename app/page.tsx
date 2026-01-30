@@ -120,12 +120,14 @@ export default function Home() {
                 ./mint.sh
               </Button>
             </Link>
-            <Button
-              variant="outline"
-              className="border-border px-8 py-4 text-lg rounded-md font-mono hover:bg-secondary/50 hover:text-foreground text-muted-foreground transition-all duration-300"
-            >
-              ./learn.sh
-            </Button>
+            <Link href="/learn">
+              <Button
+                variant="outline"
+                className="border-border px-8 py-4 text-lg rounded-md font-mono hover:bg-secondary/50 hover:text-foreground text-muted-foreground transition-all duration-300"
+              >
+                ./learn.sh
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -180,7 +182,7 @@ export default function Home() {
             <div className="mt-4 pt-4 border-t border-border">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Cpu size={16} className="text-primary" />
-                <span className="text-xs">Contract: 0x5717...978cF</span>
+                <span className="text-xs">Contract: 0x955e339e27d2689b95BfB25C5e2Bce2223321cAA</span>
               </div>
             </div>
           </Card>
