@@ -61,7 +61,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <TerminalIcon className="w-5 h-5 text-primary animate-pulse" />
             <h1 className="text-lg font-mono font-bold text-foreground tracking-tight">
-              <span className="text-primary">></span> Fixel FID
+              <span className="text-primary">&gt;</span> Fixel FID
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -155,7 +155,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-16 border-t items-center border-border">
           <div className="space-y-6">
             <h3 className="text-2xl font-mono font-bold text-foreground">
-              <span className="text-primary">></span> Built for FarCaster
+              <span className="text-primary">&gt;</span> Built for FarCaster
             </h3>
             <p className="text-muted-foreground font-mono">
               Seamlessly integrated with FarCaster Mini Apps & Frames.
@@ -163,10 +163,10 @@ export default function Home() {
             </p>
             <div className="terminal-box p-4 font-mono text-sm">
               <p className="text-muted-foreground mb-2">$ cat architecture.txt</p>
-              <p className="text-primary">├── FarCaster MiniApp SDK</p>
-              <p className="text-primary">├── Base Mainnet</p>
-              <p className="text-primary">├── Neynar API</p>
-              <p className="text-primary">└── wagmi/v2</p>
+              <p className="text-primary">&boxvr; FarCaster MiniApp SDK</p>
+              <p className="text-primary">&boxvr; Base Mainnet</p>
+              <p className="text-primary">&boxvr; Neynar API</p>
+              <p className="text-primary">&boxdr; wagmi/v2</p>
             </div>
           </div>
 
@@ -189,7 +189,7 @@ export default function Home() {
         {/* CTA Section */}
         <div className={`py-16 border-t text-center space-y-6 border-border ${styles.slideUp}`}>
           <h3 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> Ready to Mint?
+            <span className="text-primary">&gt;</span> Ready to Mint?
           </h3>
           <Link href="/mint">
             <Button className="bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold px-8 py-4 text-lg rounded-md border border-primary transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]">
