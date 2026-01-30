@@ -70,6 +70,7 @@ export function MiniApp() {
   const { capabilities, isLoading: isLoadingCapabilities } = useChainCapabilities()
   
   // App State
+  const [fid, setFid] = useState<number | null>(null)
   const [address, setAddress] = useState<string | null>(null)
   const [rarity, setRarity] = useState<RarityTier>('COMMON')
   const [nftImageUrl, setNftImageUrl] = useState<string>('')
@@ -99,8 +100,13 @@ export function MiniApp() {
   // Check if Base chain is supported by the mini app
   const isBaseSupported = capabilities?.supportedChains?.some?.((chain: { id: number }) => chain.id === BASE_CHAIN_ID) ?? true
 
-  // Check if wallet has already minted (using localStorage)
+  // Set FID from user context (FarCaster SDK) and check wallet mint status
   useEffect(() => {
+    if (userContext?.fid) {
+      console.log('FID from SDK context:', userContext.fid)
+      setFid(userContext.fid)
+    }
+    
     if (walletAddress) {
       const mintedWallets = JSON.parse(localStorage.getItem('mintedWallets') || '{}')
       if (mintedWallets[walletAddress.toLowerCase()]) {
@@ -108,7 +114,7 @@ export function MiniApp() {
       }
       setAddress(walletAddress)
     }
-  }, [walletAddress])
+  }, [userContext, walletAddress])
 
   // Generate NFT data when wallet is connected
   useEffect(() => {
@@ -117,9 +123,8 @@ export function MiniApp() {
       const walletRarity = determineRarity(walletAddress)
       setRarity(walletRarity)
       
-      // Generate unique NFT image based on wallet address
-      const walletShort = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-      const imageUrl = `/api/nft-image?address=${walletAddress}`
+      // Generate unique NFT image based on FID
+      const imageUrl = fid ? `/api/nft-image?fid=${fid}` : `/api/nft-image?address=${walletAddress}`
       setNftImageUrl(imageUrl)
     }
   }, [walletAddress])
@@ -143,8 +148,8 @@ export function MiniApp() {
   }, [isConfirmed, isTxError, confirmError, walletAddress])
 
   const handleMint = async () => {
-    if (!walletAddress) {
-      setError('Wallet not connected')
+    if (!walletAddress || !fid) {
+      setError('Wallet not connected or FID not available')
       return
     }
 
@@ -162,7 +167,7 @@ export function MiniApp() {
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
         abi: NFT_ABI,
         functionName: 'mint',
-        args: [BigInt(hashAddress(walletAddress))],
+        args: [BigInt(fid)],
         value: parseEther(MINT_PRICE),
       })
       setTxHash(hash || null)

@@ -22,6 +22,11 @@ function seededRandom(seed: number): number {
   return x - Math.floor(x)
 }
 
+// Hash FID to number for seeding
+function hashFid(fid: string): number {
+  return parseInt(fid, 10) || 0
+}
+
 // Hash wallet address to number for seeding
 function hashAddress(address: string): number {
   let hash = 0
@@ -34,8 +39,7 @@ function hashAddress(address: string): number {
 }
 
 // Determine rarity based on seeded random
-function determineRarity(address: string): RarityTier {
-  const seed = hashAddress(address)
+function determineRarity(seed: number): RarityTier {
   const rand = seededRandom(seed) * 100
   
   let cumulative = 0
@@ -56,9 +60,8 @@ function determineRarity(address: string): RarityTier {
   return 'COMMON'
 }
 
-// Generate unique pattern based on wallet address and rarity
-function generatePixelPattern(address: string, rarity: RarityTier): boolean[][] {
-  const seed = hashAddress(address)
+// Generate unique pattern based on seed and rarity
+function generatePixelPattern(seed: number, rarity: RarityTier): boolean[][] {
   const gridSize = rarity === 'PLATINUM' ? 16 : rarity === 'GOLD' ? 14 : 12
   const pattern: boolean[][] = Array(gridSize)
     .fill(null)
@@ -78,9 +81,8 @@ function generatePixelPattern(address: string, rarity: RarityTier): boolean[][] 
   return pattern
 }
 
-// Generate colors based on wallet address and rarity
-function generateColors(address: string, rarity: RarityTier): { primary: string; secondary: string; accent: string; bgGradient: string } {
-  const seed = hashAddress(address)
+// Generate colors based on seed and rarity
+function generateColors(seed: number, rarity: RarityTier): { primary: string; secondary: string; accent: string; bgGradient: string } {
   
   // Adjust saturation and lightness based on rarity
   const rarityBoost = rarity === 'PLATINUM' ? 40 : rarity === 'GOLD' ? 30 : rarity === 'SILVER' ? 20 : 0
@@ -130,9 +132,8 @@ function getTierProperties(rarity: RarityTier) {
   }
 }
 
-// Generate NFT serial number based on address
-function generateSerialNumber(address: string): string {
-  const seed = hashAddress(address)
+// Generate NFT serial number based on seed
+function generateSerialNumber(seed: number): string {
   const num = (seed % MAX_SUPPLY) + 1
   return `#${num.toString().padStart(5, '0')}/${MAX_SUPPLY}`
 }
@@ -160,18 +161,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const fid = request.nextUrl.searchParams.get('fid')
     const address = request.nextUrl.searchParams.get('address')
-    const walletShort = request.nextUrl.searchParams.get('wallet') || ''
 
-    if (!address) {
-      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 })
+    if (!fid && !address) {
+      return NextResponse.json({ error: 'FID or wallet address is required' }, { status: 400 })
     }
 
-    const rarity = determineRarity(address)
+    // Use FID if available, otherwise use address
+    const identifier = fid || address!
+    const walletDisplay = fid ? `FID ${fid}` : `${address!.slice(0, 6)}...${address!.slice(-4)}`
+
+    // Hash the identifier for deterministic results
+    const seed = fid ? hashFid(fid) : hashAddress(address!)
+
+    const rarity = determineRarity(seed)
     const tierProps = getTierProperties(rarity)
-    const colors = generateColors(address, rarity)
-    const pattern = generatePixelPattern(address, rarity)
-    const serialNumber = generateSerialNumber(address)
+    const colors = generateColors(seed, rarity)
+    const pattern = generatePixelPattern(seed, rarity)
+    const serialNumber = generateSerialNumber(seed)
 
     const pixelSize = rarity === 'PLATINUM' ? 50 : rarity === 'GOLD' ? 55 : 60
     const gridSize = pattern.length
@@ -359,7 +367,7 @@ export async function GET(request: NextRequest) {
               }}
             >
               <span style={{ fontSize: '20px' }}>⛓️</span>
-              {walletShort || `${address.slice(0, 6)}...${address.slice(-4)}`}
+              {walletDisplay}
             </div>
           </div>
 
