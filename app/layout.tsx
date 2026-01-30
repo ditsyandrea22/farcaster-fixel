@@ -1,31 +1,28 @@
-import React, { useState } from "react"
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-import { config } from '@/lib/wagmi'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { WagmiProvider } from 'wagmi'
+import { Providers } from './providers'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: 'Base NFT Mint',
-  description: 'Mint exclusive NFTs on Base Mainnet via Farcaster',
+  description: 'Mint exclusive NFTs on Base Mainnet via FarCaster',
   
   icons: {
     icon: [
       {
-        url: '/icon-light-32x32.png',
+        url: '/nft-placeholder.svg',
         media: '(prefers-color-scheme: light)',
       },
       {
-        url: '/icon-dark-32x32.png',
+        url: '/nft-placeholder.svg',
         media: '(prefers-color-scheme: dark)',
       },
       {
-        url: '/icon.svg',
+        url: '/mint-card-bg.svg',
         type: 'image/svg+xml',
       },
     ],
@@ -38,24 +35,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60 * 1000, // 1 minute
-        refetchOnWindowFocus: false,
-      },
-    },
-  }))
-
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <WagmiProvider config={config}>
-          <QueryClientProvider client={queryClient}>
-            {children}
-            <Analytics />
-          </QueryClientProvider>
-        </WagmiProvider>
+        <Providers>
+          {children}
+          <Analytics />
+        </Providers>
       </body>
     </html>
   )
