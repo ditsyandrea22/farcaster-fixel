@@ -16,11 +16,11 @@ import {
 } from '@/lib/farcaster-sdk'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, Star, Crown, Gem } from 'lucide-react'
+import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, Star, Crown, Gem, Dice } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
 
 const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x955e339e27d2689b95BfB25C5e2Bce2223321cAA'
-const MINT_PRICE = '0.001' // ETH
+const MINT_PRICE = '0.0001' // ETH ($0.3 at $3000/ETH)
 const BASE_CHAIN_ID = base.id
 
 // Rarity tiers
@@ -80,6 +80,12 @@ export function MiniApp() {
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
   const [hasMinted, setHasMinted] = useState(false)
   const [isCheckingMint, setIsCheckingMint] = useState(false)
+  
+  // New states for Generate → Mint flow
+  const [isGenerated, setIsGenerated] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [fortuneMessage, setFortuneMessage] = useState<string>('')
+  const [revealedRarity, setRevealedRarity] = useState<RarityTier | null>(null)
 
   // Wallet State using wagmi
   const { address: walletAddress, isConnected, chainId } = useAccount()
@@ -116,16 +122,12 @@ export function MiniApp() {
     }
   }, [userContext, walletAddress])
 
-  // Generate NFT data when wallet is connected
+  // Generate NFT data when wallet is connected (but don't auto-generate)
   useEffect(() => {
     if (walletAddress) {
-      // Determine rarity based on wallet address
-      const walletRarity = determineRarity(walletAddress)
-      setRarity(walletRarity)
-      
-      // Generate unique NFT image based on FID
-      const imageUrl = fid ? `/api/nft-image?fid=${fid}` : `/api/nft-image?address=${walletAddress}`
-      setNftImageUrl(imageUrl)
+      // Just prepare the data, don't generate yet
+      // User must click "Generate" to reveal their luck
+      setAddress(walletAddress)
     }
   }, [walletAddress])
 
@@ -153,8 +155,6 @@ export function MiniApp() {
       return
     }
 
-    const effectiveFid = getEffectiveFid()
-    
     if (hasMinted) {
       setError('You have already minted an NFT with this wallet')
       return
@@ -170,7 +170,6 @@ export function MiniApp() {
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
         abi: NFT_ABI,
         functionName: 'mint',
-        args: [BigInt(effectiveFid)],
         value: parseEther(MINT_PRICE),
       })
       setTxHash(hash || null)
@@ -223,6 +222,76 @@ export function MiniApp() {
       }
     }
     return { borderColor: tierConfig.color }
+  }
+
+  // Fortune messages based on rarity
+  const getFortuneMessage = (tier: RarityTier): string => {
+    const messages = {
+      PLATINUM: [
+        "🌟 LEGENDARY! Your luck is cosmic!",
+        "✨ The universe has chosen you!",
+        "💎 Pure platinum destiny awaits!",
+      ],
+      GOLD: [
+        "👑 Royal fortune smiles upon you!",
+        "🌅 Golden rays of opportunity!",
+        "✨ Majestic destiny unfolds!",
+      ],
+      SILVER: [
+        "⭐ Shimmering silver path ahead!",
+        "🌙 Gentle luck guides your way!",
+        "✨ Bright prospects incoming!",
+      ],
+      UNCOMMON: [
+        "🍀 Good fortune favors you!",
+        "🌿 A lucky breeze blows your way!",
+        "✨ Opportunities await!",
+      ],
+      COMMON: [
+        "🤝 Every journey begins somewhere!",
+        "🎯 Your unique path awaits!",
+        "✨ Your NFT, uniquely yours!",
+      ],
+    }
+    const tierMessages = messages[tier]
+    return tierMessages[Math.floor(Math.random() * tierMessages.length)]
+  }
+
+  // Generate NFT based on luck (kehokian)
+  const handleGenerate = async () => {
+    setIsGenerating(true)
+    setError(null)
+    
+    // Simulate fortune calculation animation
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    if (!walletAddress) {
+      setError('Wallet not connected')
+      setIsGenerating(false)
+      return
+    }
+
+    // Determine rarity based on wallet address (deterministic but feels random)
+    const walletRarity = determineRarity(walletAddress)
+    setRarity(walletRarity)
+    setRevealedRarity(walletRarity)
+    setFortuneMessage(getFortuneMessage(walletRarity))
+    
+    // Generate unique NFT image based on FID or wallet
+    const imageUrl = fid ? `/api/nft-image?fid=${fid}&rarity=${walletRarity}` : `/api/nft-image?address=${walletAddress}&rarity=${walletRarity}`
+    setNftImageUrl(imageUrl)
+    
+    setIsGenerated(true)
+    setIsGenerating(false)
+  }
+
+  // Reset and try your luck again
+  const handleRegenerate = () => {
+    setIsGenerated(false)
+    setRevealedRarity(null)
+    setFortuneMessage('')
+    setSuccess(false)
+    setTxHash(null)
   }
 
   // Show loading while SDK is initializing
@@ -404,68 +473,176 @@ export function MiniApp() {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-terminal-dark">
-      <div className="max-w-md mx-auto">
-        {/* Terminal Header */}
-        <div className="text-center mb-6 mt-4">
-          {/* Terminal Window Header */}
-          <div className="terminal-box p-3 mb-4">
+  // Step 1: Show Generate button (wallet connected, not yet generated)
+  if (walletAddress && !isGenerated && !success) {
+    return (
+      <div className="min-h-screen bg-terminal-dark">
+        <div className="max-w-md mx-auto">
+          {/* Terminal Header */}
+          <div className="text-center mb-6 mt-4">
+            <div className="terminal-box p-3 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+                </div>
+                <span className="font-mono text-xs text-muted-foreground">bash — generate</span>
+              </div>
+            </div>
+            
+            <h1 className="text-2xl font-mono font-bold text-foreground mb-1">
+              <span className="text-primary">&gt;</span> Reveal Your Luck
+            </h1>
+            <p className="text-muted-foreground text-sm font-mono">Generate your unique NFT based on kehokian!</p>
+          </div>
+
+          {/* Generate Card */}
+          <Card className="mb-6 p-6 terminal-box">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
+                <Sparkles size={32} className="text-primary" />
+              </div>
+              <p className="text-foreground font-mono text-sm mb-2">Your Fortune Awaits</p>
+              <p className="text-muted-foreground text-xs font-mono mb-4">
+                Click below to reveal your NFT rarity based on your wallet's destiny
+              </p>
+              
+              {/* Rarity Odds Preview */}
+              <div className="grid grid-cols-2 gap-2 text-xs font-mono mb-4 w-full">
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-400">💎</span>
+                  <span className="text-gray-400">PLATINUM</span>
+                  <span className="text-muted-foreground ml-auto">0.01%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-yellow-500">👑</span>
+                  <span className="text-yellow-500">GOLD</span>
+                  <span className="text-muted-foreground ml-auto">0.99%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-silver">⭐</span>
+                  <span className="text-silver">SILVER</span>
+                  <span className="text-muted-foreground ml-auto">4%</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-green-500">🍀</span>
+                  <span className="text-green-500">UNCOMMON</span>
+                  <span className="text-muted-foreground ml-auto">15%</span>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="w-full bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.5)]"
+                size="lg"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    Calculating your destiny...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={18} />
+                    Reveal My NFT!
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+
+          {/* Wallet Info */}
+          <Card className="mb-6 p-4 terminal-box">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+                <TerminalIcon size={16} className="text-primary" />
+                <p className="text-foreground font-mono text-sm">Connected</p>
               </div>
-              <span className="font-mono text-xs text-muted-foreground">bash — mint</span>
+              <p className="text-muted-foreground text-xs font-mono">{address?.slice(0, 8)}...{address?.slice(-6)}</p>
             </div>
-          </div>
-          
-          <h1 className="text-2xl font-mono font-bold text-foreground mb-1">
-            <span className="text-primary">&gt;</span> Mint Your AI NFT
-          </h1>
-          <p className="text-muted-foreground text-sm font-mono">AI-generated unique NFT based on your wallet</p>
-          
-          {/* Status Indicators */}
-          <div className="flex justify-center gap-2 mt-3">
-            {isInMiniApp ? (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/20 text-primary text-xs font-mono rounded-full border border-primary/30">
-                <Shield size={10} />
-                Mini App
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-secondary/50 text-muted-foreground text-xs font-mono rounded-full">
-                <Globe size={10} />
-                Standalone
-              </span>
-            )}
-            {sdkError && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-destructive/20 text-destructive text-xs font-mono rounded-full border border-destructive/30">
-                SDK Error
-              </span>
-            )}
-          </div>
+          </Card>
         </div>
+      </div>
+    )
+  }
 
-        {/* Loading State for NFT Generation */}
-        {loading && (
+  // Step 2: Generating animation
+  if (isGenerating) {
+    return (
+      <div className="min-h-screen bg-terminal-dark">
+        <div className="max-w-md mx-auto">
+          <div className="text-center mb-6 mt-4">
+            <div className="terminal-box p-3 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+                </div>
+                <span className="font-mono text-xs text-muted-foreground">bash — fortune</span>
+              </div>
+            </div>
+            <h1 className="text-2xl font-mono font-bold text-foreground mb-1">
+              <span className="text-primary">&gt;</span> Calculating Your Destiny...
+            </h1>
+          </div>
+
           <Card className="mb-6 p-8 terminal-box">
             <div className="flex flex-col items-center justify-center py-8">
               <div className={styles.pixelLoaderTerminal}></div>
-              <p className="text-foreground mt-6 font-mono font-medium">{'>'} Generating your AI NFT...</p>
-              <p className="text-muted-foreground text-xs mt-2 font-mono">Creating unique design from wallet address</p>
-              <div className="mt-4 font-mono text-xs text-muted-foreground">
-                <p>&gt; Analyzing wallet pattern...</p>
-                <p className="animation-delay-100">&gt; Calculating rarity...</p>
-                <p className="animation-delay-200">&gt; Rendering NFT...</p>
+              <p className="text-foreground mt-6 font-mono font-medium">Reading the blockchain stars...</p>
+              <div className="mt-6 font-mono text-xs text-muted-foreground space-y-2">
+                <p className="animation-delay-100">&gt; Analyzing wallet pattern...</p>
+                <p className="animation-delay-200">&gt; Consulting the hash oracles...</p>
+                <p className="animation-delay-300">&gt; Determining your fate...</p>
+                <p className="animation-delay-400">&gt; Finalizing rarity...</p>
               </div>
             </div>
           </Card>
-        )}
+        </div>
+      </div>
+    )
+  }
 
-        {/* NFT Preview Card */}
-        {nftImageUrl && !loading && (
-          <Card className={`mb-6 overflow-hidden terminal-box transition-all duration-500 ${styles.fadeIn}`} style={getRarityStyle(rarity)}>
+  // Step 3: Show generated NFT with fortune message, then Mint
+  if (walletAddress && isGenerated && !success) {
+    const currentRarity = revealedRarity || rarity
+    const currentStyle = getRarityStyle(currentRarity)
+    
+    return (
+      <div className="min-h-screen bg-terminal-dark">
+        <div className="max-w-md mx-auto">
+          {/* Terminal Header */}
+          <div className="text-center mb-6 mt-4">
+            <div className="terminal-box p-3 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                  <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+                </div>
+                <span className="font-mono text-xs text-muted-foreground">bash — mint</span>
+              </div>
+            </div>
+            
+            <h1 className="text-2xl font-mono font-bold text-foreground mb-1">
+              <span className="text-primary">&gt;</span> Your Destiny Revealed!
+            </h1>
+          </div>
+
+          {/* Fortune Message */}
+          <Card className={`mb-4 p-4 terminal-box border-2 transition-all duration-500 ${styles.slideUp}`} style={{ borderColor: RARITY_TIERS[currentRarity].color }}>
+            <div className="flex flex-col items-center text-center">
+              <p className="text-foreground font-mono font-medium text-lg" style={{ color: RARITY_TIERS[currentRarity].color }}>
+                {fortuneMessage}
+              </p>
+            </div>
+          </Card>
+
+          {/* NFT Preview Card */}
+          <Card className={`mb-6 overflow-hidden terminal-box transition-all duration-500 ${styles.fadeIn}`} style={currentStyle}>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 pointer-events-none"></div>
               <div className={styles.nftGlowTerminal}></div>
@@ -476,162 +653,234 @@ export function MiniApp() {
               />
             </div>
             <div className="p-4 border-t border-border">
-              <div className="flex items-center gap-2 mb-2">
-                {getRarityIcon(rarity)}
+              <div className="flex items-center justify-center gap-3 mb-2">
+                {getRarityIcon(currentRarity)}
                 <Sparkles size={16} className="text-primary" />
-                <p className="text-xs font-semibold text-foreground font-mono">{RARITY_TIERS[rarity].name} NFT</p>
+                <p className="text-lg font-bold font-mono uppercase" style={{ color: RARITY_TIERS[currentRarity].color }}>
+                  {RARITY_TIERS[currentRarity].name}
+                </p>
+                {getRarityIcon(currentRarity)}
               </div>
-              <p className="text-muted-foreground text-xs font-mono">Unique AI-generated design from wallet address</p>
+              <p className="text-center text-muted-foreground text-xs font-mono">
+                Rarity Rate: {RARITY_TIERS[currentRarity].rate}%
+              </p>
             </div>
           </Card>
-        )}
 
-        {/* Rarity Badge */}
-        <Card className={`mb-6 p-4 terminal-box transition-all duration-500 ${styles.slideUp}`} style={getRarityStyle(rarity)}>
-          <div className="flex items-center justify-center gap-3">
-            {getRarityIcon(rarity)}
-            <span 
-              className="text-lg font-bold font-mono uppercase"
-              style={{ color: RARITY_TIERS[rarity].color }}
-            >
-              {RARITY_TIERS[rarity].name}
-            </span>
-            {getRarityIcon(rarity)}
-          </div>
-          <p className="text-center text-muted-foreground text-xs font-mono mt-2">
-            Rarity Rate: {RARITY_TIERS[rarity].rate}%
-          </p>
-        </Card>
-
-        {/* Wallet Connection */}
-        <Card className={`mb-6 p-4 terminal-box transition-all duration-500 ${styles.slideUp}`} style={{ animationDelay: '0.2s' }}>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-2">
-              <TerminalIcon size={16} className="text-primary" />
-              <p className="text-foreground font-mono text-sm">Connected Wallet</p>
-            </div>
-            
-            <div className="bg-secondary/30 rounded-lg p-3 border border-border">
-              <p className="text-muted-foreground text-xs font-mono mb-1">Address</p>
-              <p className="text-foreground font-mono text-sm">{address?.slice(0, 8)}...{address?.slice(-6)}</p>
-            </div>
-
-            {connectError && (
-              <div className="mb-4 p-3 bg-destructive/20 border border-destructive/30 rounded-lg flex gap-2">
-                <AlertCircle size={18} className="text-destructive flex-shrink-0 mt-0.5" />
-                <p className="text-destructive text-sm font-mono">
-                  {connectError.message.includes('no matching chain')
-                    ? 'Please switch to Base network in your wallet'
-                    : connectError.message}
-                </p>
-              </div>
-            )}
-
-            <Button
+          {/* Action Buttons */}
+          <Card className="mb-6 p-4 terminal-box">
+            <div className="space-y-3">
+              {/* Mint Button */}
+              <Button
                 onClick={handleMint}
                 disabled={isWritingContract || isConfirming}
                 className="w-full bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all duration-300 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
                 size="lg"
               >
-                  {isWritingContract || isConfirming ? (
-                    <span>
-                      <Loader2 className="animate-spin" size={18} />
-                      {isConfirming ? 'Confirming...' : 'Minting...'}
-                    </span>
-                  ) : (
-                    <span>
-                      <Sparkles size={18} />
-                      Mint NFT ({MINT_PRICE} ETH)
-                    </span>
-                  )}
+                {isWritingContract || isConfirming ? (
+                  <span>
+                    <Loader2 className="animate-spin" size={18} />
+                    {isConfirming ? 'Confirming...' : 'Minting...'}
+                  </span>
+                ) : (
+                  <span>
+                    <Sparkles size={18} />
+                    Mint This NFT ({MINT_PRICE} ETH)
+                  </span>
+                )}
               </Button>
 
-            <Button
-              onClick={() => disconnect()}
-              variant="ghost"
-              className="w-full font-mono text-xs"
-            >
-              Disconnect Wallet
-            </Button>
+              {/* Regenerate Button */}
+              <Button
+                onClick={handleRegenerate}
+                variant="outline"
+                disabled={isWritingContract || isConfirming}
+                className="w-full font-mono text-xs"
+              >
+                <RefreshCw size={14} className="mr-2" />
+                Try My Luck Again
+              </Button>
+
+              {/* Disconnect */}
+              <Button
+                onClick={() => disconnect()}
+                variant="ghost"
+                className="w-full font-mono text-xs"
+              >
+                Disconnect Wallet
+              </Button>
+            </div>
+          </Card>
+
+          {/* Error Display */}
+          {(error || writeError) && (
+            <Card className="mb-6 p-4 terminal-box border-destructive/30">
+              <div className="flex gap-2 items-start">
+                <AlertCircle size={18} className="text-destructive flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-destructive text-sm font-mono text-left">{error || writeError?.message}</p>
+                  <Button
+                    onClick={resetAndRetry}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 font-mono text-xs"
+                  >
+                    <RefreshCw size={12} className="mr-1" />
+                    Retry
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Transaction Progress */}
+          {txHash && (
+            <Card className="mb-6 p-4 terminal-box">
+              <div className="flex items-center gap-3">
+                <Loader2 className="animate-spin text-primary" size={20} />
+                <div className="flex-1">
+                  <p className="text-foreground font-mono text-sm">Transaction Pending</p>
+                  <p className="text-muted-foreground text-xs font-mono">Confirming on Base network...</p>
+                </div>
+              </div>
+              <a
+                href={`https://basescan.org/tx/${txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary text-xs font-mono mt-2 hover:underline block"
+              >
+                {txHash.slice(0, 10)}...{txHash.slice(-8)} ↗
+              </a>
+            </Card>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Step 4: Success - Show minted NFT with full details
+  return (
+    <div className="min-h-screen bg-terminal-dark">
+      <div className="max-w-md mx-auto">
+        {/* Terminal Header */}
+        <div className="text-center mb-6 mt-4">
+          <div className="terminal-box p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+              </div>
+              <span className="font-mono text-xs text-muted-foreground">bash — minted</span>
+            </div>
+          </div>
+          
+          <h1 className="text-2xl font-mono font-bold text-foreground mb-1">
+            <span className="text-primary">&gt;</span> NFT Minted Successfully!
+          </h1>
+          <p className="text-muted-foreground text-sm font-mono">Your unique NFT is now in your wallet</p>
+        </div>
+
+        {/* Minted NFT Display */}
+        <Card className={`mb-6 overflow-hidden terminal-box transition-all duration-500 ${styles.fadeIn}`} style={getRarityStyle(rarity)}>
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 pointer-events-none"></div>
+            <div className={styles.nftGlowTerminal}></div>
+            <img
+              src={nftImageUrl || "/placeholder.svg"}
+              alt="Your Minted NFT"
+              className="w-full h-auto"
+            />
+            {/* Minted Badge */}
+            <div className="absolute top-3 right-3 bg-green-500 text-terminal-dark px-3 py-1 rounded-full font-mono text-xs font-bold flex items-center gap-1">
+              <CheckCircle2 size={14} />
+              MINTED
+            </div>
+          </div>
+          <div className="p-4 border-t border-border">
+            {/* Rarity Header */}
+            <div className="flex items-center justify-center gap-3 mb-3">
+              {getRarityIcon(rarity)}
+              <Sparkles size={16} className="text-primary" />
+              <p className="text-xl font-bold font-mono uppercase" style={{ color: RARITY_TIERS[rarity].color }}>
+                {RARITY_TIERS[rarity].name}
+              </p>
+              {getRarityIcon(rarity)}
+            </div>
+            
+            {/* Fortune Message */}
+            <div className="text-center mb-3 p-2 bg-secondary/30 rounded-lg">
+              <p className="text-foreground font-mono text-sm" style={{ color: RARITY_TIERS[rarity].color }}>
+                {fortuneMessage}
+              </p>
+            </div>
+            
+            {/* NFT Details */}
+            <div className="space-y-2 text-xs font-mono">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Rarity</span>
+                <span className="text-foreground" style={{ color: RARITY_TIERS[rarity].color }}>{RARITY_TIERS[rarity].name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Rate</span>
+                <span className="text-foreground">{RARITY_TIERS[rarity].rate}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Wallet</span>
+                <span className="text-foreground">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
+              </div>
+            </div>
           </div>
         </Card>
 
-        {/* Error Display */}
-        {(error || writeError) && (
-          <Card className="mb-6 p-4 terminal-box border-destructive/30">
-            <div className="flex gap-2 items-start">
-              <AlertCircle size={18} className="text-destructive flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-destructive text-sm font-mono text-left">{error || writeError?.message}</p>
-                <Button
-                  onClick={resetAndRetry}
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 font-mono text-xs"
-                >
-                  <RefreshCw size={12} className="mr-1" />
-                  Retry
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Success Display */}
-        {success && (
+        {/* Transaction Details */}
+        {txHash && (
           <Card className="mb-6 p-4 terminal-box border-green-500/30">
-            <div className="flex flex-col items-center text-center">
-              <CheckCircle2 size={48} className="text-green-500 mb-2" />
-              <p className="text-foreground font-semibold font-mono">NFT Successfully Minted!</p>
-              <p className="text-muted-foreground text-sm font-mono mt-1">
-                Your {RARITY_TIERS[rarity].name} NFT has been sent to your wallet
-              </p>
-              {txHash && (
-                <a
-                  href={`https://basescan.org/tx/${txHash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary text-xs font-mono mt-2 hover:underline"
-                >
-                  View on Basescan ↗
-                </a>
-              )}
-            </div>
-          </Card>
-        )}
-
-        {/* Transaction Progress */}
-        {txHash && !success && (
-          <Card className="mb-6 p-4 terminal-box">
-            <div className="flex items-center gap-3">
-              <Loader2 className="animate-spin text-primary" size={20} />
-              <div className="flex-1">
-                <p className="text-foreground font-mono text-sm">Transaction Pending</p>
-                <p className="text-muted-foreground text-xs font-mono">Confirming on Base network...</p>
-              </div>
+            <div className="flex items-center gap-3 mb-3">
+              <CheckCircle2 size={20} className="text-green-500" />
+              <p className="text-foreground font-mono font-semibold">Transaction Confirmed!</p>
             </div>
             <a
               href={`https://basescan.org/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary text-xs font-mono mt-2 hover:underline block"
+              className="text-primary text-xs font-mono hover:underline flex items-center gap-1"
             >
-              {txHash.slice(0, 10)}...{txHash.slice(-8)} ↗
+              View on Basescan ↗
             </a>
           </Card>
         )}
 
-        {/* Info Card */}
+        {/* Wallet Info */}
         <Card className="mb-6 p-4 terminal-box">
-          <div className="flex items-start gap-2">
-            <TerminalIcon size={16} className="text-primary mt-0.5" />
-            <div>
-              <p className="text-foreground font-mono text-sm mb-1">One NFT Per Wallet</p>
-              <p className="text-muted-foreground text-xs font-mono">
-                Each wallet address can mint only one NFT. The NFT design is uniquely generated 
-                based on your wallet address using AI.
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TerminalIcon size={16} className="text-primary" />
+              <p className="text-foreground font-mono text-sm">Connected</p>
             </div>
+            <Button
+              onClick={() => disconnect()}
+              variant="outline"
+              size="sm"
+              className="font-mono text-xs"
+            >
+              Disconnect
+            </Button>
+          </div>
+          <div className="bg-secondary/30 rounded-lg p-3 border border-border mt-3">
+            <p className="text-muted-foreground text-xs font-mono mb-1">Wallet Address</p>
+            <p className="text-foreground font-mono text-sm">{address?.slice(0, 8)}...{address?.slice(-6)}</p>
+          </div>
+        </Card>
+
+        {/* Celebration Message */}
+        <Card className="mb-6 p-4 terminal-box border-primary/30">
+          <div className="flex flex-col items-center text-center">
+            <div className="text-4xl mb-2">🎉</div>
+            <p className="text-foreground font-semibold font-mono">Congratulations!</p>
+            <p className="text-muted-foreground text-xs font-mono mt-1">
+              Your {RARITY_TIERS[rarity].name} NFT has been added to your collection
+            </p>
           </div>
         </Card>
       </div>
