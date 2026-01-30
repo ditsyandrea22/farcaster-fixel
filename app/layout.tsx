@@ -1,8 +1,11 @@
-import React from "react"
+import React, { useState } from "react"
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
+import { config } from '@/lib/wagmi'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { WagmiProvider } from 'wagmi'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -35,11 +38,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const [queryClient] = useState(() => new QueryClient())
+
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        {children}
-        <Analytics />
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+            <Analytics />
+          </QueryClientProvider>
+        </WagmiProvider>
       </body>
     </html>
   )

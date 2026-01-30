@@ -241,7 +241,6 @@ export function MiniApp() {
               )}
 
               {connectors
-                .filter((connector) => connector.id !== 'io.metamask' || typeof window !== 'undefined')
                 .map((connector) => (
                   <Button
                     key={connector.uid}
