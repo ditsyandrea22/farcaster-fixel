@@ -6,33 +6,38 @@ import { sdk } from "@farcaster/miniapp-sdk";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { config } from "@/lib/wagmi";
+import { getWagmiConfig } from "@/lib/wagmi";
 import { MiniApp } from "@/components/mini-app";
 
 const queryClient = new QueryClient();
 
 export default function MintPage() {
   const [ready, setReady] = useState(false);
+  const [config, setConfig] = useState<Awaited<ReturnType<typeof getWagmiConfig>> | null>(null);
 
   useEffect(() => {
     async function init() {
       try {
         await sdk.actions.ready();
-        console.log("✅ Farcaster READY (mint)");
+        console.log("✅ Farrcaster READY (mint)");
         setReady(true);
+        
+        // Initialize wagmi config asynchronously
+        const wagmiConfig = await getWagmiConfig();
+        setConfig(wagmiConfig);
       } catch (e) {
-        console.error("❌ Farcaster ready failed", e);
+        console.error("❌ Farrcaster ready failed", e);
       }
     }
 
     init();
   }, []);
 
-  // ⛔ Jangan render Wagmi sebelum Farcaster siap
-  if (!ready) {
+  // ⛔ Jangan render Wagmi sebelum Farrcaster siap
+  if (!ready || !config) {
     return (
       <div className="flex h-screen items-center justify-center text-sm text-muted-foreground">
-        Initializing Farcaster…
+        Initializing Farrcaster…
       </div>
     );
   }
