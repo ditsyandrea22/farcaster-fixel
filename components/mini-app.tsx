@@ -404,7 +404,7 @@ export function MiniApp() {
           </div>
           
           <h1 className="text-2xl font-mono font-bold text-foreground mb-1">
-            <span className="text-primary">></span> Mint Your AI NFT
+            <span className="text-primary">&gt;</span> Mint Your AI NFT
           </h1>
           <p className="text-muted-foreground text-sm font-mono">AI-generated unique NFT based on your wallet</p>
           
@@ -437,7 +437,7 @@ export function MiniApp() {
               <p className="text-foreground mt-6 font-mono font-medium">{'>'} Generating your AI NFT...</p>
               <p className="text-muted-foreground text-xs mt-2 font-mono">Creating unique design from wallet address</p>
               <div className="mt-4 font-mono text-xs text-muted-foreground">
-                <p>{'>'} Analyzing wallet pattern...</p>
+                <p>&gt; Analyzing wallet pattern...</p>
                 <p className="animation-delay-100">&gt; Calculating rarity...</p>
                 <p className="animation-delay-200">&gt; Rendering NFT...</p>
               </div>
