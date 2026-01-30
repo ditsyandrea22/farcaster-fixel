@@ -1,4 +1,10 @@
 {
+  "accountAssociation": {
+    "header": "eyJmaWQiOjI1ODI1MCwidHlwZSI6ImF1dGgiLCJrZXkiOiIweGEwNmJjRTYyNTU2NjVmQzFGODVBMDU5NzVhOWI2MzgwYjRlRTQ4ODkifQ",
+    "payload": "eyJkb21haW4iOiJmYXJjYXN0ZXItZml4ZWwudmVyY2VsLmFwcCJ9",
+    "signature": "Bn6L4W9mbJvw269OSturp1b80YTruSAkaNgyCrOfTR4BY80pQ6PbUu0QF3KP/AXVgbVOnmLKvsNNkbYy53YU6xw="
+  },
+
   "version": "1",
   "name": "Fixel FID – Pixel NFT Minting",
   "icon": "https://your-domain.xyz/mint-card-bg.svg",
