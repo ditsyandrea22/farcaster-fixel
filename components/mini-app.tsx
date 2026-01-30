@@ -19,7 +19,7 @@ import { Card } from '@/components/ui/card'
 import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, Star, Crown, Gem } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
 
-const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x5717EEFadDEACE4DbB7e7189C860A88b4D9978cF'
+const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x955e339e27d2689b95BfB25C5e2Bce2223321cAA'
 const MINT_PRICE = '0.001' // ETH
 const BASE_CHAIN_ID = base.id
 

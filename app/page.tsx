@@ -175,7 +175,7 @@ export default function Home() {
               <span className="text-muted-foreground">$</span>{" "}
               <span className="text-accent-foreground">cast send</span>{" "}
               <span className="text-muted-foreground">--to</span>{" "}
-              0x5717EEFadDEACE4DbB7e7189C860A88b4D9978cF
+              0x955e339e27d2689b95BfB25C5e2Bce2223321cAA
             </div>
             <div className="mt-4 pt-4 border-t border-border">
               <div className="flex items-center gap-2 text-muted-foreground">
