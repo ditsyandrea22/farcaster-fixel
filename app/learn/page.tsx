@@ -50,7 +50,7 @@ export default function LearnPage() {
           <div className="flex items-center gap-3">
             <Terminal className="w-5 h-5 text-primary animate-pulse" />
             <h1 className="text-lg font-mono font-bold text-foreground tracking-tight">
-              <span className="text-primary">></span> Fixel FID / Learn
+              <span className="text-primary">{'>'}</span> Fixel FID / Learn
             </h1>
           </div>
           <Link href="/">
@@ -74,13 +74,16 @@ export default function LearnPage() {
           <div className="font-mono text-sm text-primary">
             <p className="typing-effect">{typedText}</p>
             <p className="text-green-400 mt-1 opacity-80">✓ Documentation loaded</p>
+            <p className="text-muted-foreground mt-2">
+              <span className="text-primary animate-pulse">_</span>
+            </p>
           </div>
         </div>
 
         {/* Introduction Section */}
-        <section className="mb-16 space-y-6">
+        <section className={`mb-16 space-y-6 ${styles.slideUp}`}>
           <h2 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> What is Fixel FID?
+            <span className="text-primary">{'>'}</span> What is Fixel FID?
           </h2>
           <div className="terminal-box p-6 bg-transparent">
             <p className="text-muted-foreground font-mono leading-relaxed">
@@ -93,9 +96,9 @@ export default function LearnPage() {
         </section>
 
         {/* Architecture Section */}
-        <section className="mb-16 space-y-6">
+        <section className={`mb-16 space-y-6 ${styles.slideUp}`}>
           <h2 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> Architecture Overview
+            <span className="text-primary">{'>'}</span> Architecture Overview
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -123,9 +126,9 @@ export default function LearnPage() {
         </section>
 
         {/* How It Works Section */}
-        <section className="mb-16 space-y-6">
+        <section className={`mb-16 space-y-6 ${styles.slideUp}`}>
           <h2 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> How It Works
+            <span className="text-primary">{'>'}</span> How It Works
           </h2>
           
           <div className="space-y-4">
@@ -153,9 +156,9 @@ export default function LearnPage() {
         </section>
 
         {/* Technical Stack Section */}
-        <section className="mb-16 space-y-6">
+        <section className={`mb-16 space-y-6 ${styles.slideUp}`}>
           <h2 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> Technical Stack
+            <span className="text-primary">{'>'}</span> Technical Stack
           </h2>
           
           <div className="terminal-box p-6">
@@ -202,9 +205,9 @@ export default function LearnPage() {
         </section>
 
         {/* API Endpoints Section */}
-        <section className="mb-16 space-y-6">
+        <section className={`mb-16 space-y-6 ${styles.slideUp}`}>
           <h2 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> API Endpoints
+            <span className="text-primary">{'>'}</span> API Endpoints
           </h2>
           
           <div className="space-y-4">
@@ -232,9 +235,9 @@ export default function LearnPage() {
         </section>
 
         {/* Smart Contract Section */}
-        <section className="mb-16 space-y-6">
+        <section className={`mb-16 space-y-6 ${styles.slideUp}`}>
           <h2 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> Smart Contract
+            <span className="text-primary">{'>'}</span> Smart Contract
           </h2>
           
           <div className="terminal-box p-6">
@@ -253,9 +256,9 @@ export default function LearnPage() {
         </section>
 
         {/* Security Section */}
-        <section className="mb-16 space-y-6">
+        <section className={`mb-16 space-y-6 ${styles.slideUp}`}>
           <h2 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> Security Considerations
+            <span className="text-primary">{'>'}</span> Security Considerations
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -279,9 +282,9 @@ export default function LearnPage() {
         </section>
 
         {/* Getting Started Section */}
-        <section className="mb-16 space-y-6">
+        <section className={`mb-16 space-y-6 ${styles.slideUp}`}>
           <h2 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> Getting Started
+            <span className="text-primary">{'>'}</span> Getting Started
           </h2>
           
           <div className="terminal-box p-6 font-mono text-sm">
@@ -301,9 +304,9 @@ export default function LearnPage() {
         </section>
 
         {/* Resources Section */}
-        <section className="mb-16 space-y-6">
+        <section className={`mb-16 space-y-6 ${styles.slideUp}`}>
           <h2 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> Resources
+            <span className="text-primary">{'>'}</span> Resources
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -327,8 +330,8 @@ export default function LearnPage() {
 
         {/* Navigation Footer */}
         <div className="border-t border-border pt-8 text-center">
-          <Link href="/">
-            <Button className="bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold px-8 py-4">
+          <Link href="/mint">
+            <Button className="bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold px-8 py-4 text-lg rounded-md border border-primary transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]">
               <Terminal className="mr-2 w-5 h-5" />
               ./mint.sh
             </Button>
