@@ -7,7 +7,7 @@
 
   "name": "Fixel FID",
   "icon": "https://farcaster-fixel.vercel.app/nft-placeholder.svg",
-  "description": "Mint unique pixel NFTs generated from your Farcaster FID on Base",
+  "description": "Mint pixel NFTs generated from your Farcaster FID on Base",
   "category": "art",
   "website": "https://farcaster-fixel.vercel.app",
   "privacy": "https://farcaster-fixel.vercel.app/privacy",
@@ -24,13 +24,13 @@
     "imageUrl": "https://farcaster-fixel.vercel.app/mint-card-bg.svg",
     "imageAspectRatio": "1:1",
 
-    "buttonTitle": "Mint Pixel NFT",
+    "buttonTitle": "Mint NFT",
 
-    "subtitle": "Your Farcaster identity as pixel art",
-    "tagline": "Turn your FID into a collectible NFT",
+    "subtitle": "Pixel NFTs from your FID",
+    "tagline": "Mint your FID as pixel NFT",
 
-    "primaryCategory": "art",
-    "tags": ["farcaster", "nft", "pixel-art", "fid", "base"],
+    "primaryCategory": "art-creativity",
+    "tags": ["farcaster", "nft", "pixel", "fid", "base"],
 
     "splashImageUrl": "https://farcaster-fixel.vercel.app/splash.png",
     "splashBackgroundColor": "#0F172A",
@@ -42,12 +42,10 @@
       "https://farcaster-fixel.vercel.app/screenshots/2.png"
     ],
 
-    "ogTitle": "Fixel — Farcaster Pixel NFTs",
-    "ogDescription": "Generate and mint pixel NFTs directly from your Farcaster FID",
+    "ogTitle": "Fixel Pixel NFTs",
+    "ogDescription": "Mint pixel NFTs from your Farcaster FID",
     "ogImageUrl": "https://farcaster-fixel.vercel.app/og.png",
 
-    "castShareUrl": "https://farcaster-fixel.vercel.app",
-
-    "webhookUrl": "https://farcaster-fixel.vercel.app/api/webhook"
+    "castShareUrl": "https://farcaster-fixel.vercel.app"
   }
 }
