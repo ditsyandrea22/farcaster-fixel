@@ -1,6 +1,6 @@
 /**
  * FarCaster Mini App SDK utilities
- * Based on the new SDK: https://miniapps.farcaster.xyz/docs/sdk/
+ * Based on the new SDK patterns: https://miniapps.farcaster.xyz/docs/sdk/
  */
 
 'use client';
@@ -14,10 +14,10 @@ import { sdk } from '@farcaster/miniapp-sdk';
 
 export interface UserContext {
   fid: number;
-  username: string;
-  displayName: string;
-  pfp: string;
-  bio: string;
+  username?: string;
+  displayName?: string;
+  pfp?: string;
+  bio?: string;
 }
 
 export interface WalletState {
@@ -41,7 +41,7 @@ export interface ChainInfo {
       http: string[];
     };
   };
-  blockExplorers: {
+  blockExplorers?: {
     default: {
       url: string;
       name: string;
@@ -71,6 +71,7 @@ export interface CapabilityInfo {
 /**
  * Initialize the FarCaster SDK
  * Call this once at the app level
+ * https://miniapps.farcaster.xyz/docs/sdk/changelog
  */
 export function useInitializeSdk() {
   const [isReady, setIsReady] = useState(false);
@@ -108,7 +109,6 @@ export function useInitializeSdk() {
 
 /**
  * Detect if the app is running inside the FarCaster mini app
- * Uses the new SDK's detection capabilities
  * https://miniapps.farcaster.xyz/docs/sdk/is-in-mini-app
  */
 export function useMiniAppDetection(): MiniAppState {
@@ -121,17 +121,18 @@ export function useMiniAppDetection(): MiniAppState {
   useEffect(() => {
     const detect = async () => {
       try {
-        // Check if we're in a mini app using the SDK
-        // The new SDK provides isInMiniApp() or similar detection
         let inMiniApp = false;
         
-        if (sdk && sdk.isInMiniApp) {
-          inMiniApp = sdk.isInMiniApp();
-        } else if (typeof window !== 'undefined') {
-          // Fallback: check for parent frame or Warpcast environment
-          inMiniApp = window.parent !== window || 
-            navigator.userAgent.includes('Warpcast') ||
-            navigator.userAgent.includes('farcaster');
+        // Method 1: Check SDK method
+        if (sdk && typeof (sdk as any).isInMiniApp === 'function') {
+          inMiniApp = (sdk as any).isInMiniApp();
+        }
+        // Method 2: Check for Warpcast/UserAgent
+        else if (typeof window !== 'undefined') {
+          const userAgent = navigator.userAgent;
+          inMiniApp = userAgent.includes('Warpcast') || 
+                      userAgent.includes('farcaster') ||
+                      window.parent !== window;
         }
         
         setState({
@@ -163,23 +164,34 @@ export function useMiniAppDetection(): MiniAppState {
  * https://miniapps.farcaster.xyz/docs/sdk/context
  */
 export function useUserContext(): {
-  context: { fid: number; username?: string; displayName?: string; pfp?: string } | null;
+  context: UserContext | null;
   isLoading: boolean;
   error: Error | null;
 } {
-  const [context, setContext] = useState<{ fid: number; username?: string; displayName?: string; pfp?: string } | null>(null);
+  const [context, setContext] = useState<UserContext | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     const fetchContext = async () => {
       try {
-        let ctx = null;
+        let ctx: UserContext | null = null;
         
-        if (sdk && sdk.getContext) {
-          ctx = await sdk.getContext();
-        } else {
-          // Try to get FID from URL params as fallback
+        // Method 1: Try SDK context method
+        if (sdk && typeof (sdk as any).getContext === 'function') {
+          const sdkContext = await (sdk as any).getContext();
+          if (sdkContext) {
+            ctx = {
+              fid: sdkContext.fid,
+              username: sdkContext.username,
+              displayName: sdkContext.displayName,
+              pfp: sdkContext.pfp?.url,
+              bio: sdkContext.profile?.bio?.text,
+            };
+          }
+        }
+        // Method 2: Try to get context from URL params
+        else if (typeof window !== 'undefined') {
           const params = new URLSearchParams(window.location.search);
           const urlFid = params.get('fid');
           if (urlFid) {
@@ -205,11 +217,11 @@ export function useUserContext(): {
 }
 
 // ============================================================================
-// Wallet Hook (using new SDK)
+// Wallet Hook
 // ============================================================================
 
 /**
- * Use the new wallet SDK for wallet operations
+ * Wallet hook using the new SDK wallet API
  * https://miniapps.farcaster.xyz/docs/sdk/wallet
  */
 export function useFarcasterWallet(): WalletState & {
@@ -226,14 +238,25 @@ export function useFarcasterWallet(): WalletState & {
     error: null,
   });
 
-  // Use the new SDK wallet if available
+  // Use SDK wallet if available
+  const sdkWallet = (sdk as any)?.wallet;
+
   const connect = useCallback(async () => {
     setWalletState((prev: WalletState) => ({ ...prev, isConnecting: true, error: null }));
     try {
-      if (sdk && sdk.wallet) {
-        await sdk.wallet.connect();
+      if (sdkWallet && typeof sdkWallet.connect === 'function') {
+        const result = await sdkWallet.connect();
+        if (result) {
+          setWalletState({
+            address: result.address as `0x${string}`,
+            chainId: result.chainId || null,
+            isConnected: true,
+            isConnecting: false,
+            error: null,
+          });
+        }
       } else {
-        // Fallback: use window.ethereum if available
+        // Fallback: use window.ethereum
         const ethereum = getBrowserProvider();
         if (ethereum) {
           const accounts = await ethereum.request({
@@ -259,12 +282,12 @@ export function useFarcasterWallet(): WalletState & {
         error: err instanceof Error ? err : new Error('Connection failed'),
       }));
     }
-  }, []);
+  }, [sdkWallet]);
 
   const disconnect = useCallback(async () => {
     try {
-      if (sdk && sdk.wallet) {
-        await sdk.wallet.disconnect();
+      if (sdkWallet && typeof sdkWallet.disconnect === 'function') {
+        await sdkWallet.disconnect();
       }
       setWalletState({
         address: null,
@@ -276,12 +299,12 @@ export function useFarcasterWallet(): WalletState & {
     } catch (err) {
       console.error('Failed to disconnect:', err);
     }
-  }, []);
+  }, [sdkWallet]);
 
   const switchChain = useCallback(async (chainId: number) => {
     try {
-      if (sdk && sdk.wallet) {
-        await sdk.wallet.switchChain(chainId);
+      if (sdkWallet && typeof sdkWallet.switchChain === 'function') {
+        await sdkWallet.switchChain(chainId);
       } else {
         const ethereum = getBrowserProvider();
         if (ethereum) {
@@ -297,12 +320,12 @@ export function useFarcasterWallet(): WalletState & {
         error: err instanceof Error ? err : new Error('Chain switch failed'),
       }));
     }
-  }, []);
+  }, [sdkWallet]);
 
   const sendTransaction = useCallback(async (params: { to: string; value: string; data?: string }): Promise<`0x${string}`> => {
     try {
-      if (sdk && sdk.wallet) {
-        return await sdk.wallet.sendTransaction(params);
+      if (sdkWallet && typeof sdkWallet.sendTransaction === 'function') {
+        return await sdkWallet.sendTransaction(params);
       } else {
         const ethereum = getBrowserProvider();
         if (!ethereum) throw new Error('No wallet provider');
@@ -321,7 +344,7 @@ export function useFarcasterWallet(): WalletState & {
     } catch (err) {
       throw err instanceof Error ? err : new Error('Transaction failed');
     }
-  }, [walletState.address]);
+  }, [sdkWallet, walletState.address]);
 
   return {
     ...walletState,
@@ -354,10 +377,11 @@ export function useChainCapabilities(): {
       try {
         let caps: CapabilityInfo | null = null;
         
-        if (sdk && sdk.getCapabilities) {
-          caps = await sdk.getCapabilities();
+        // Try SDK capabilities method
+        if (sdk && typeof (sdk as any).getCapabilities === 'function') {
+          caps = await (sdk as any).getCapabilities();
         } else {
-          // Default capabilities for common chains
+          // Default capabilities for chains commonly supported by mini apps
           caps = {
             supportedChains: [
               {
@@ -442,10 +466,8 @@ export function formatAddress(address: `0x${string}` | null, chars = 4): string 
 export function getBrowserProvider(): any {
   if (typeof window === 'undefined') return null;
   
-  // Check for various wallet providers
-  const ethereum = (window as any).ethereum;
+  const ethereum = (window as any)?.ethereum;
   if (ethereum?.providers) {
-    // Multiple providers injected
     return ethereum.providers.find((p: any) => p.isMetaMask) || ethereum.providers[0];
   }
   return ethereum;
