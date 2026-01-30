@@ -289,8 +289,8 @@ export default function LearnPage() {
           
           <div className="terminal-box p-6 font-mono text-sm">
             <p className="text-muted-foreground mb-4"># Clone and install dependencies</p>
-            <p className="text-primary mb-2">$ git clone https://github.com/your-repo/farcaster-mini-app-blueprint.git</p>
-            <p className="text-primary mb-2">$ cd farcaster-mini-app-blueprint</p>
+            <p className="text-primary mb-2">$ git clone https://github.com/ditsyandrea22/farcaster-fixel.git</p>
+            <p className="text-primary mb-2">$ cd farcaster-fixel</p>
             <p className="text-primary mb-6">$ pnpm install</p>
             
             <p className="text-muted-foreground mb-4"># Configure environment variables</p>
