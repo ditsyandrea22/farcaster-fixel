@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ImageResponse } from 'next/og'
+import { getRateLimitResult, defaultConfig } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -36,6 +37,27 @@ function generateColors(fid: number): { primary: string; secondary: string; acce
 
 export async function GET(request: NextRequest) {
   try {
+    // Get client IP for rate limiting
+    const ip = request.headers.get('x-forwarded-for') || 
+               request.headers.get('x-real-ip') || 
+               'unknown'
+    
+    const rateLimit = getRateLimitResult(ip)
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+            'X-RateLimit-Limit': defaultConfig.maxRequests.toString(),
+            'X-RateLimit-Remaining': '0',
+          }
+        }
+      )
+    }
+
     const fid = request.nextUrl.searchParams.get('fid')
     const username = request.nextUrl.searchParams.get('username') || 'Farcaster'
 

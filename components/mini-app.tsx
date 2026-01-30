@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { sdk } from '@farcaster/miniapp-sdk'
-import { useAccount, useConnect, useDisconnect, useWriteContract, useSwitchChain } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useWriteContract, useSwitchChain, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther } from 'viem'
 import { config } from '@/lib/wagmi'
 import { base } from 'wagmi/chains'
@@ -10,10 +10,10 @@ import { NFT_ABI } from '@/lib/contractAbi'
 import { getUserProfile, type UserProfile, getFidFromAddress, generateNftImageUrl } from '@/lib/neynar'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles } from 'lucide-react'
+import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
 
-const NFT_CONTRACT_ADDRESS = '0x5717EEFadDEACE4DbB7e7189C860A88b4D9978cF'
+const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x5717EEFadDEACE4DbB7e7189C860A88b4D9978cF'
 const MINT_PRICE = '0.001' // ETH
 
 export function MiniApp() {
@@ -24,24 +24,40 @@ export function MiniApp() {
   const [lookingUpFid, setLookingUpFid] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [sdkReady, setSdkReady] = useState(false)
+  const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
 
   const { address, isConnected, chainId } = useAccount()
   const { connect, connectors, isPending: isConnecting, error: connectError } = useConnect()
   const { disconnect } = useDisconnect()
-  const { writeContract, isPending } = useWriteContract()
+  const { writeContract, isPending: isWritingContract, error: writeError } = useWriteContract()
   const { switchChain, isPending: isSwitchingChain } = useSwitchChain()
+  
+  // Wait for transaction confirmation
+  const { isLoading: isConfirming, isSuccess: isConfirmed, isError: isTxError, error: confirmError } = 
+    useWaitForTransactionReceipt({ 
+      hash: txHash || undefined,
+      query: { enabled: !!txHash }
+    })
   
   // Check if user is on the wrong network
   const isWrongNetwork = isConnected && chainId && chainId !== base.id
 
-  // Initialize SDK and signal that app is ready
+  // Initialize SDK with proper error handling
   useEffect(() => {
     const initSdk = async () => {
       try {
-        // Wait for any initial setup
-        await sdk.actions.ready()
+        if (sdk && typeof sdk.actions.ready === 'function') {
+          await sdk.actions.ready()
+          setSdkReady(true)
+        } else {
+          console.warn('Farcaster SDK not available, running in standalone mode')
+          setSdkReady(true) // Still mark as ready for standalone mode
+        }
       } catch (err) {
-        console.error('Failed to call sdk.actions.ready():', err)
+        console.error('Failed to initialize FarCaster SDK:', err)
+        // Continue anyway - user can still use the app
+        setSdkReady(true)
       }
     }
     initSdk()
@@ -53,7 +69,12 @@ export function MiniApp() {
     const urlFid = params.get('fid')
 
     if (urlFid) {
-      setFid(parseInt(urlFid, 10))
+      const parsed = parseInt(urlFid, 10)
+      if (!isNaN(parsed) && parsed > 0) {
+        setFid(parsed)
+      } else {
+        console.warn('Invalid FID in URL:', urlFid)
+      }
     }
   }, [])
 
@@ -72,11 +93,11 @@ export function MiniApp() {
       if (result) {
         setFid(result.fid)
       } else {
-        setError('No Farcaster account found for this wallet')
+        setError('No FarCaster account found for this wallet')
       }
     } catch (err) {
       console.error('Error looking up FID:', err)
-      setError('Failed to look up Farcaster account')
+      setError('Failed to look up FarCaster account')
     } finally {
       setLookingUpFid(false)
     }
@@ -88,6 +109,17 @@ export function MiniApp() {
       fetchProfile()
     }
   }, [fid])
+
+  // Handle transaction confirmation
+  useEffect(() => {
+    if (isConfirmed) {
+      setSuccess(true)
+      setError(null)
+    }
+    if (isTxError && confirmError) {
+      setError(confirmError.message || 'Transaction failed')
+    }
+  }, [isConfirmed, isTxError, confirmError])
 
   const fetchProfile = async () => {
     if (!fid) return
@@ -119,19 +151,30 @@ export function MiniApp() {
 
     setError(null)
     setSuccess(false)
+    setTxHash(null)
 
     try {
-      writeContract({
+      const hash = await writeContract({
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
         abi: NFT_ABI,
         functionName: 'mint',
         args: [BigInt(fid)],
         value: parseEther(MINT_PRICE),
       })
+      setTxHash(hash || null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Mint failed')
     }
   }
+
+  const resetAndRetry = useCallback(() => {
+    setError(null)
+    setSuccess(false)
+    setTxHash(null)
+    if (fid) {
+      fetchProfile()
+    }
+  }, [fid])
 
   if (!fid) {
     return (
@@ -142,7 +185,7 @@ export function MiniApp() {
               <div className={styles.pulseLoader}>
                 <Loader2 className="mx-auto text-blue-600" size={40} />
               </div>
-              <p className="text-gray-700 mt-6 font-medium">Looking up your Farcaster account...</p>
+              <p className="text-gray-700 mt-6 font-medium">Looking up your FarCaster account...</p>
               <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
             </>
           ) : (
@@ -151,9 +194,29 @@ export function MiniApp() {
               <p className="text-gray-900 font-semibold text-lg">Connect Wallet</p>
               <p className="text-gray-600 text-sm mt-2">
                 {isConnected 
-                  ? 'No Farcaster account linked to this wallet'
+                  ? 'No FarCaster account linked to this wallet'
                   : 'Connect your wallet to get started'}
               </p>
+              {!isConnected && (
+                <div className="mt-6 space-y-3">
+                  {connectors.map((connector) => (
+                    <Button
+                      key={connector.uid}
+                      onClick={() => connect({ connector })}
+                      disabled={isConnecting}
+                      className="w-full bg-gray-900 hover:bg-gray-800 text-white flex items-center justify-center gap-2 font-medium disabled:opacity-50"
+                      size="lg"
+                    >
+                      {isConnecting && connectors.some(c => c.uid === connector.uid) ? (
+                        <Loader2 className="animate-spin" size={18} />
+                      ) : (
+                        <Wallet size={18} />
+                      )}
+                      {connector.name}
+                    </Button>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </Card>
@@ -168,6 +231,9 @@ export function MiniApp() {
         <div className="text-center mb-8 mt-4">
           <h1 className="text-3xl font-bold text-gray-900 mb-1">Mint NFT</h1>
           <p className="text-gray-600 text-sm">Base Mainnet • FID #{fid}</p>
+          {!sdkReady && (
+            <p className="text-amber-600 text-xs mt-1">SDK initializing...</p>
+          )}
         </div>
 
         {/* Loading State for NFT Generation */}
@@ -198,7 +264,7 @@ export function MiniApp() {
                 <Sparkles size={16} className="text-blue-600" />
                 <p className="text-xs font-semibold text-gray-600">PIXEL NFT</p>
               </div>
-              <p className="text-gray-600 text-xs">Unique design generated from your Farcaster identity</p>
+              <p className="text-gray-600 text-xs">Unique design generated from your FarCaster identity</p>
             </div>
           </Card>
         )}
@@ -258,9 +324,9 @@ export function MiniApp() {
                   </Button>
                 ))}
 
-                <p className="text-center text-gray-500 text-xs mt-4">
-                  Make sure you have a wallet installed
-                </p>
+              <p className="text-center text-gray-500 text-xs mt-4">
+                Make sure you have a wallet installed
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -313,30 +379,58 @@ export function MiniApp() {
               </div>
             )}
 
-            {error && (
+            {/* Error Display */}
+            {(error || writeError) && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex gap-2">
                 <AlertCircle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-red-700 text-sm">{error}</p>
+                <p className="text-red-700 text-sm">{error || writeError?.message}</p>
               </div>
             )}
 
+            {/* Success Display */}
             {success && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex gap-2">
                 <CheckCircle2 size={18} className="text-green-600 flex-shrink-0 mt-0.5" />
-                <p className="text-green-700 text-sm">NFT minted successfully!</p>
+                <div className="flex-1">
+                  <p className="text-green-700 text-sm font-medium">NFT minted successfully!</p>
+                  {txHash && (
+                    <p className="text-green-600 text-xs mt-1 font-mono break-all">
+                      Tx: {txHash.slice(0, 6)}...{txHash.slice(-4)}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
+            {/* Transaction Status */}
+            {isConfirming && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex gap-2">
+                <Loader2 size={18} className="text-blue-600 flex-shrink-0 mt-0.5 animate-spin" />
+                <p className="text-blue-700 text-sm">Confirming transaction...</p>
+              </div>
+            )}
+
+            {/* Mint Button */}
             <Button
               onClick={handleMint}
-              disabled={isPending || !isConnected || loading || isWrongNetwork}
+              disabled={isPending || !isConnected || loading || isWrongNetwork || isConfirming || isConfirmed}
               className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-6 text-base disabled:opacity-50 transition-all"
               size="lg"
             >
               {isPending ? (
                 <>
                   <Loader2 className="animate-spin mr-2" size={18} />
-                  Minting...
+                  Preparing...
+                </>
+              ) : isConfirming ? (
+                <>
+                  <Loader2 className="animate-spin mr-2" size={18} />
+                  Confirming...
+                </>
+              ) : isConfirmed ? (
+                <>
+                  <CheckCircle2 size={18} className="mr-2" />
+                  Minted!
                 </>
               ) : (
                 <>
@@ -346,8 +440,23 @@ export function MiniApp() {
               )}
             </Button>
 
+            {/* Retry button on error */}
+            {(error || isTxError) && (
+              <Button
+                onClick={resetAndRetry}
+                variant="outline"
+                className="w-full mt-3 text-gray-700 border-gray-300 hover:bg-gray-50"
+                size="sm"
+              >
+                <RefreshCw size={16} className="mr-2" />
+                Retry
+              </Button>
+            )}
+
             <p className="text-center text-gray-500 text-xs mt-4">
-              Sign transaction in your wallet to complete the mint
+              {isConfirming 
+                ? 'Please confirm the transaction in your wallet'
+                : 'Sign transaction in your wallet to complete the mint'}
             </p>
           </Card>
         )}

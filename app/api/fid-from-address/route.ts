@@ -1,9 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getRateLimitResult, defaultConfig } from '@/lib/rate-limit'
 
 const NEYNAR_API_KEY = process.env.NEYNAR_API_KEY
 
+if (!NEYNAR_API_KEY) {
+  console.error('NEYNAR_API_KEY is not configured')
+}
+
 export async function GET(request: NextRequest) {
   try {
+    // Get client IP for rate limiting
+    const ip = request.headers.get('x-forwarded-for') || 
+               request.headers.get('x-real-ip') || 
+               'unknown'
+    
+    const rateLimit = getRateLimitResult(ip)
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+            'X-RateLimit-Limit': defaultConfig.maxRequests.toString(),
+            'X-RateLimit-Remaining': '0',
+          }
+        }
+      )
+    }
+
     const address = request.nextUrl.searchParams.get('address')
 
     if (!address) {
@@ -11,6 +37,10 @@ export async function GET(request: NextRequest) {
         { error: 'Wallet address is required' },
         { status: 400 }
       )
+    }
+
+    if (!NEYNAR_API_KEY) {
+      return NextResponse.json({ error: 'Server configuration error: NEYNAR_API_KEY not set' }, { status: 500 })
     }
 
     // Query Neynar to find FID by wallet address
