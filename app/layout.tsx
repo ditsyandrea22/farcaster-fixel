@@ -1,15 +1,23 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { JetBrains_Mono, Ubuntu_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { Providers } from './providers'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const jetbrainsMono = JetBrains_Mono({ 
+  subsets: ["latin"],
+  variable: '--font-mono',
+})
+
+const ubuntuMono = Ubuntu_Mono({
+  weight: ['400', '700'],
+  subsets: ["latin"],
+  variable: '--font-terminal',
+})
 
 export const metadata: Metadata = {
-  title: 'Base NFT Mint',
-  description: 'Mint exclusive NFTs on Base Mainnet via FarCaster',
+  title: 'Fixel FID | Terminal NFT Mint',
+  description: 'Generate & Mint Pixel NFTs on Base Mainnet via FarCaster',
   
   icons: {
     icon: [
@@ -36,8 +44,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
+    <html lang="en" className="dark">
+      <body className={`${jetbrainsMono.variable} ${ubuntuMono.variable} font-mono antialiased bg-terminal-dark text-terminal-green scanlines`}>
         <Providers>
           {children}
           <Analytics />

@@ -17,7 +17,7 @@ import {
 } from '@/lib/farcaster-sdk'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield } from 'lucide-react'
+import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
 
 const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x5717EEFadDEACE4DbB7e7189C860A88b4D9978cF'
@@ -217,13 +217,16 @@ export function MiniApp() {
   // Show loading while SDK is initializing
   if (!sdkReady || isDetectingMiniApp) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <Card className="w-full max-w-md p-8 text-center border border-gray-200">
-          <div className={styles.pulseLoader}>
-            <Loader2 className="mx-auto text-blue-600" size={40} />
+      <div className="flex items-center justify-center min-h-screen bg-terminal-dark">
+        <Card className="w-full max-w-md p-8 text-center terminal-box">
+          <div className={styles.pixelLoaderTerminal}></div>
+          <p className="text-foreground mt-6 font-mono font-medium">Initializing...</p>
+          <p className="text-muted-foreground text-sm mt-2 font-mono">Setting up FarCaster Mini App</p>
+          <div className="mt-4 font-mono text-xs text-primary">
+            <p>{'>'} Loading SDK modules...</p>
+            <p className="animation-delay-100">{'>'} Establishing connection...</p>
+            <p className="animation-delay-200">{'>'} Preparing environment...</p>
           </div>
-          <p className="text-gray-700 mt-6 font-medium">Initializing...</p>
-          <p className="text-gray-500 text-sm mt-2">Setting up FarCaster Mini App</p>
         </Card>
       </div>
     )
@@ -231,17 +234,23 @@ export function MiniApp() {
 
   if (!fid) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <Card className="w-full max-w-md p-8 text-center border border-gray-200">
+      <div className="flex items-center justify-center min-h-screen bg-terminal-dark">
+        <Card className="w-full max-w-md p-6 text-center terminal-box">
+          {/* Terminal Header */}
+          <div className="flex items-center gap-2 mb-4 border-b border-border/50 pb-3">
+            <TerminalIcon className="w-5 h-5 text-primary" />
+            <span className="font-mono text-sm text-foreground">Fixel FID v1.0</span>
+          </div>
+
           {/* Mini App Status Badge */}
           <div className="flex justify-center gap-2 mb-4">
             {isInMiniApp ? (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/20 text-primary text-xs font-mono rounded-full border border-primary/30">
                 <Shield size={12} />
                 In Mini App
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary/50 text-muted-foreground text-xs font-mono rounded-full">
                 <Globe size={12} />
                 Standalone Mode
               </span>
@@ -250,17 +259,21 @@ export function MiniApp() {
 
           {lookingUpFid ? (
             <>
-              <div className={styles.pulseLoader}>
-                <Loader2 className="mx-auto text-blue-600" size={40} />
+              <div className={styles.pulseLoaderTerminal}>
+                <Loader2 className="mx-auto text-primary" size={40} />
               </div>
-              <p className="text-gray-700 mt-6 font-medium">Looking up your FarCaster account...</p>
-              <p className="text-gray-500 text-sm mt-2">This may take a moment</p>
+              <p className="text-foreground mt-6 font-mono font-medium">{'>'} Looking up your FarCaster account...</p>
+              <p className="text-muted-foreground text-sm mt-2 font-mono">This may take a moment</p>
+              <div className="mt-4 font-mono text-xs text-muted-foreground">
+                <p>{'>'} Querying Neynar API...</p>
+                <p className="animation-delay-100">{'>'} Resolving FID...</p>
+              </div>
             </>
           ) : (
             <>
-              <Sparkles className="mx-auto mb-4 text-gray-400" size={40} />
-              <p className="text-gray-900 font-semibold text-lg">Connect Wallet</p>
-              <p className="text-gray-600 text-sm mt-2">
+              <TerminalIcon className="mx-auto mb-4 text-primary/50" size={40} />
+              <p className="text-foreground font-semibold text-lg font-mono">Connect Wallet</p>
+              <p className="text-muted-foreground text-sm mt-2 font-mono">
                 {isConnected 
                   ? 'No FarCaster account linked to this wallet'
                   : 'Connect your wallet to get started'}
@@ -268,14 +281,17 @@ export function MiniApp() {
               
               {/* Error Message with Retry Button */}
               {error && isConnected && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-700 text-sm mb-2">{error}</p>
+                <div className="mt-4 p-3 bg-destructive/20 border border-destructive/30 rounded-lg">
+                  <div className="flex gap-2 items-start">
+                    <AlertCircle size={18} className="text-destructive flex-shrink-0 mt-0.5" />
+                    <p className="text-destructive text-sm font-mono text-left">{error}</p>
+                  </div>
                   <Button
                     onClick={lookupFidFromWallet}
                     disabled={lookingUpFid}
                     variant="outline"
                     size="sm"
-                    className="w-full border-red-300 text-red-700 hover:bg-red-100"
+                    className="w-full mt-3 border-border text-foreground hover:bg-secondary/50 font-mono"
                   >
                     {lookingUpFid ? (
                       <>
@@ -285,7 +301,7 @@ export function MiniApp() {
                     ) : (
                       <>
                         <RefreshCw size={14} className="mr-2" />
-                        Retry Lookup
+                        ./retry.sh
                       </>
                     )}
                   </Button>
@@ -294,9 +310,9 @@ export function MiniApp() {
               
               {/* Chain Support Warning */}
               {!isBaseSupported && (
-                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex gap-2">
-                  <AlertCircle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-amber-700 text-sm text-left">
+                <div className="mt-4 p-3 bg-accent/20 border border-accent/30 rounded-lg flex gap-2">
+                  <AlertCircle size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                  <p className="text-accent text-sm text-left font-mono">
                     Base chain may not be fully supported in this mini app environment.
                   </p>
                 </div>
@@ -309,7 +325,7 @@ export function MiniApp() {
                       key={connector.uid}
                       onClick={() => connect({ connector })}
                       disabled={isConnecting}
-                      className="w-full bg-gray-900 hover:bg-gray-800 text-white flex items-center justify-center gap-2 font-medium disabled:opacity-50"
+                      className="w-full bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all duration-300 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
                       size="lg"
                     >
                       {isConnecting && connectors.some(c => c.uid === connector.uid) ? (
@@ -320,6 +336,9 @@ export function MiniApp() {
                       {connector.name}
                     </Button>
                   ))}
+                  <p className="text-center text-muted-foreground text-xs mt-4 font-mono">
+                    {'>'} Make sure you have a wallet installed
+                  </p>
                 </div>
               )}
             </>
@@ -330,28 +349,42 @@ export function MiniApp() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-terminal-dark">
       <div className="max-w-md mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8 mt-4">
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">Mint NFT</h1>
-          <p className="text-gray-600 text-sm">Base Mainnet • FID #{fid}</p>
+        {/* Terminal Header */}
+        <div className="text-center mb-6 mt-4">
+          {/* Terminal Window Header */}
+          <div className="terminal-box p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+              </div>
+              <span className="font-mono text-xs text-muted-foreground">bash — mint</span>
+            </div>
+          </div>
+          
+          <h1 className="text-2xl font-mono font-bold text-foreground mb-1">
+            <span className="text-primary">></span> Mint NFT
+          </h1>
+          <p className="text-muted-foreground text-sm font-mono">Base Mainnet • FID #{fid}</p>
           
           {/* Status Indicators */}
-          <div className="flex justify-center gap-2 mt-2">
+          <div className="flex justify-center gap-2 mt-3">
             {isInMiniApp ? (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-600 text-xs font-medium rounded-full">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/20 text-primary text-xs font-mono rounded-full border border-primary/30">
                 <Shield size={10} />
                 Mini App
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-full">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-secondary/50 text-muted-foreground text-xs font-mono rounded-full">
                 <Globe size={10} />
                 Standalone
               </span>
             )}
             {sdkError && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 text-xs font-medium rounded-full">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-destructive/20 text-destructive text-xs font-mono rounded-full border border-destructive/30">
                 SDK Error
               </span>
             )}
@@ -360,51 +393,56 @@ export function MiniApp() {
 
         {/* Loading State for NFT Generation */}
         {loading && (
-          <Card className="mb-6 p-8 bg-gradient-to-br from-gray-50 to-white border border-gray-200">
+          <Card className="mb-6 p-8 terminal-box">
             <div className="flex flex-col items-center justify-center py-8">
-              <div className={styles.pixelLoader}></div>
-              <p className="text-gray-600 mt-6 font-medium">Generating your pixel NFT...</p>
-              <p className="text-gray-500 text-xs mt-2">Creating unique design from FID data</p>
+              <div className={styles.pixelLoaderTerminal}></div>
+              <p className="text-foreground mt-6 font-mono font-medium">{'>'} Generating your pixel NFT...</p>
+              <p className="text-muted-foreground text-xs mt-2 font-mono">Creating unique design from FID data</p>
+              <div className="mt-4 font-mono text-xs text-muted-foreground">
+                <p>{'>'} Processing FID #{fid}...</p>
+                <p className="animation-delay-100">{'>'} Generating pixel patterns...</p>
+                <p className="animation-delay-200">{'>'} Rendering NFT...</p>
+              </div>
             </div>
           </Card>
         )}
 
         {/* NFT Preview Card */}
         {nftImageUrl && !loading && (
-          <Card className={`mb-6 overflow-hidden border border-gray-200 transition-all duration-500 ${styles.fadeIn}`}>
+          <Card className={`mb-6 overflow-hidden terminal-box transition-all duration-500 ${styles.fadeIn}`}>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 pointer-events-none"></div>
-              <div className={styles.nftGlow}></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 pointer-events-none"></div>
+              <div className={styles.nftGlowTerminal}></div>
               <img
                 src={nftImageUrl || "/placeholder.svg"}
                 alt="Your Base NFT"
                 className="w-full h-auto"
               />
             </div>
-            <div className="p-4">
+            <div className="p-4 border-t border-border">
               <div className="flex items-center gap-2 mb-2">
-                <Sparkles size={16} className="text-blue-600" />
-                <p className="text-xs font-semibold text-gray-600">PIXEL NFT</p>
+                <Sparkles size={16} className="text-primary" />
+                <p className="text-xs font-semibold text-foreground font-mono">PIXEL NFT</p>
               </div>
-              <p className="text-gray-600 text-xs">Unique design generated from your FarCaster identity</p>
+              <p className="text-muted-foreground text-xs font-mono">Unique design generated from your FarCaster identity</p>
             </div>
           </Card>
         )}
 
         {/* Profile Card */}
         {profile && !loading && (
-          <Card className={`mb-6 p-6 border border-gray-200 bg-white transition-all duration-500 ${styles.slideUp}`}>
-            <div className="flex gap-4">
+          <Card className={`mb-6 p-4 terminal-box transition-all duration-500 ${styles.slideUp}`} style={{ animationDelay: '0.1s' }}>
+            <div className="flex gap-4 items-center">
               <img
                 src={profile.pfp.url || "/placeholder.svg"}
                 alt={profile.username}
-                className="w-14 h-14 rounded-full border border-gray-200"
+                className="w-14 h-14 rounded-full border-2 border-primary/30"
               />
               <div className="flex-1">
-                <h2 className="font-semibold text-gray-900">{profile.displayName}</h2>
-                <p className="text-gray-600 text-sm">@{profile.username}</p>
+                <h2 className="font-semibold text-foreground font-mono">{profile.displayName}</h2>
+                <p className="text-muted-foreground text-sm font-mono">@{profile.username}</p>
                 {profile.profile.bio.text && (
-                  <p className="text-gray-600 text-xs mt-1 line-clamp-2">{profile.profile.bio.text}</p>
+                  <p className="text-muted-foreground text-xs mt-1 line-clamp-2 font-mono">{profile.profile.bio.text}</p>
                 )}
               </div>
             </div>
@@ -412,15 +450,18 @@ export function MiniApp() {
         )}
 
         {/* Wallet Connection */}
-        <Card className={`mb-6 p-6 border border-gray-200 bg-white transition-all duration-500 ${styles.slideUp}`} style={{ animationDelay: '0.1s' }}>
+        <Card className={`mb-6 p-4 terminal-box transition-all duration-500 ${styles.slideUp}`} style={{ animationDelay: '0.2s' }}>
           {!isConnected ? (
             <div className="space-y-3">
-              <p className="text-gray-700 font-medium mb-4">Connect Wallet</p>
+              <div className="flex items-center gap-2 mb-2">
+                <TerminalIcon size={16} className="text-primary" />
+                <p className="text-foreground font-mono font-medium">Connect Wallet</p>
+              </div>
               
               {connectError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex gap-2">
-                  <AlertCircle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-red-700 text-sm">
+                <div className="mb-4 p-3 bg-destructive/20 border border-destructive/30 rounded-lg flex gap-2">
+                  <AlertCircle size={18} className="text-destructive flex-shrink-0 mt-0.5" />
+                  <p className="text-destructive text-sm font-mono">
                     {connectError.message.includes('no matching chain')
                       ? 'Please switch to Base network in your wallet'
                       : connectError.message}
@@ -434,7 +475,7 @@ export function MiniApp() {
                     key={connector.uid}
                     onClick={() => connect({ connector })}
                     disabled={isConnecting}
-                    className="w-full bg-gray-900 hover:bg-gray-800 text-white flex items-center justify-center gap-2 font-medium disabled:opacity-50"
+                    className="w-full bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all duration-300 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
                     size="lg"
                   >
                     {isConnecting && connectors.some(c => c.uid === connector.uid) ? (
@@ -446,23 +487,27 @@ export function MiniApp() {
                   </Button>
                 ))}
 
-              <p className="text-center text-gray-500 text-xs mt-4">
-                Make sure you have a wallet installed
+              <p className="text-center text-muted-foreground text-xs mt-4 font-mono">
+                {'>'} Make sure you have a wallet installed
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                <p className="text-xs text-gray-500 mb-1 font-semibold">Connected</p>
-                <p className="text-gray-900 font-mono text-xs break-all">{address}</p>
+              <div className="flex items-center gap-2 mb-2">
+                <TerminalIcon size={16} className="text-primary" />
+                <p className="text-foreground font-mono text-sm">Connected</p>
+              </div>
+              <div className="bg-secondary/30 rounded-lg p-3 border border-border">
+                <p className="text-xs text-muted-foreground mb-1 font-mono">ADDRESS</p>
+                <p className="text-foreground font-mono text-xs break-all">{address}</p>
               </div>
               <Button
                 onClick={() => disconnect()}
                 variant="outline"
-                className="w-full text-gray-700 border-gray-300 hover:bg-gray-50"
+                className="w-full text-foreground border-border hover:bg-secondary/50 font-mono text-sm"
                 size="sm"
               >
-                Disconnect
+                ./disconnect.sh
               </Button>
             </div>
           )}
@@ -470,23 +515,26 @@ export function MiniApp() {
 
         {/* Mint Card */}
         {isConnected && (
-          <Card className={`p-6 border border-gray-200 bg-white transition-all duration-500 ${styles.slideUp}`} style={{ animationDelay: '0.2s' }}>
-            <div className="mb-6">
-              <p className="text-gray-600 text-sm mb-2 font-medium">Mint Price</p>
-              <p className="text-3xl font-bold text-gray-900">{MINT_PRICE}</p>
-              <p className="text-gray-600 text-xs mt-1">ETH on Base Mainnet</p>
+          <Card className={`p-4 terminal-box transition-all duration-500 ${styles.slideUp}`} style={{ animationDelay: '0.3s' }}>
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TerminalIcon size={16} className="text-primary" />
+                <p className="text-muted-foreground text-sm font-mono">Mint Price</p>
+              </div>
+              <p className="text-3xl font-mono font-bold text-foreground">{MINT_PRICE}</p>
+              <p className="text-muted-foreground text-xs mt-1 font-mono">ETH on Base Mainnet</p>
             </div>
 
             {isWrongNetwork && (
-              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="mb-4 p-3 bg-accent/20 border border-accent/30 rounded-lg">
                 <div className="flex gap-2 mb-3">
-                  <AlertCircle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-amber-700 text-sm">Wrong network detected</p>
+                  <AlertCircle size={18} className="text-accent flex-shrink-0 mt-0.5" />
+                  <p className="text-accent text-sm font-mono">Wrong network detected</p>
                 </div>
                 <Button
                   onClick={() => switchChain({ chainId: BASE_CHAIN_ID })}
                   disabled={isSwitchingChain}
-                  className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                  className="w-full bg-accent hover:bg-accent/80 text-terminal-dark font-mono text-sm"
                   size="sm"
                 >
                   {isSwitchingChain ? (
@@ -495,7 +543,7 @@ export function MiniApp() {
                       Switching...
                     </>
                   ) : (
-                    'Switch to Base Mainnet'
+                    './switch-chain.sh --base'
                   )}
                 </Button>
               </div>
@@ -503,20 +551,20 @@ export function MiniApp() {
 
             {/* Error Display */}
             {(error || writeError) && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex gap-2">
-                <AlertCircle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
-                <p className="text-red-700 text-sm">{error || writeError?.message}</p>
+              <div className="mb-4 p-3 bg-destructive/20 border border-destructive/30 rounded-lg flex gap-2">
+                <AlertCircle size={18} className="text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-destructive text-sm font-mono">{error || writeError?.message}</p>
               </div>
             )}
 
             {/* Success Display */}
             {success && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex gap-2">
-                <CheckCircle2 size={18} className="text-green-600 flex-shrink-0 mt-0.5" />
+              <div className="mb-4 p-3 bg-primary/20 border border-primary/30 rounded-lg flex gap-2">
+                <CheckCircle2 size={18} className="text-primary flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-green-700 text-sm font-medium">NFT minted successfully!</p>
+                  <p className="text-primary text-sm font-mono font-medium">NFT minted successfully!</p>
                   {txHash && (
-                    <p className="text-green-600 text-xs mt-1 font-mono break-all">
+                    <p className="text-muted-foreground text-xs mt-1 font-mono break-all">
                       Tx: {txHash.slice(0, 6)}...{txHash.slice(-4)}
                     </p>
                   )}
@@ -526,9 +574,9 @@ export function MiniApp() {
 
             {/* Transaction Status */}
             {isConfirming && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex gap-2">
-                <Loader2 size={18} className="text-blue-600 flex-shrink-0 mt-0.5 animate-spin" />
-                <p className="text-blue-700 text-sm">Confirming transaction...</p>
+              <div className="mb-4 p-3 bg-primary/20 border border-primary/30 rounded-lg flex gap-2">
+                <Loader2 size={18} className="text-primary flex-shrink-0 mt-0.5 animate-spin" />
+                <p className="text-foreground text-sm font-mono">Confirming transaction...</p>
               </div>
             )}
 
@@ -536,7 +584,7 @@ export function MiniApp() {
             <Button
               onClick={handleMint}
               disabled={isWritingContract || !isConnected || loading || isWrongNetwork || isConfirming || isConfirmed}
-              className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-6 text-base disabled:opacity-50 transition-all"
+              className="w-full bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold py-4 text-base disabled:opacity-50 transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]"
               size="lg"
             >
               {isWritingContract ? (
@@ -557,7 +605,7 @@ export function MiniApp() {
               ) : (
                 <>
                   <Sparkles size={18} className="mr-2" />
-                  Mint NFT
+                  ./mint.sh
                 </>
               )}
             </Button>
@@ -567,18 +615,18 @@ export function MiniApp() {
               <Button
                 onClick={resetAndRetry}
                 variant="outline"
-                className="w-full mt-3 text-gray-700 border-gray-300 hover:bg-gray-50"
+                className="w-full mt-3 text-foreground border-border hover:bg-secondary/50 font-mono text-sm"
                 size="sm"
               >
                 <RefreshCw size={16} className="mr-2" />
-                Retry
+                ./retry.sh
               </Button>
             )}
 
-            <p className="text-center text-gray-500 text-xs mt-4">
+            <p className="text-center text-muted-foreground text-xs mt-4 font-mono">
               {isConfirming 
-                ? 'Please confirm the transaction in your wallet'
-                : 'Sign transaction in your wallet to complete the mint'}
+                ? '{>} Please confirm the transaction in your wallet'
+                : '{>} Sign transaction in your wallet to complete the mint'}
             </p>
           </Card>
         )}

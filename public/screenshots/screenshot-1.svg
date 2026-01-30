@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <rect width="400" height="300" fill="#1E293B"/>
+  <rect x="20" y="20" width="360" height="260" rx="8" fill="#334155"/>
+  <text x="200" y="50" font-family="monospace" font-size="14" fill="#F8FAFC" text-anchor="middle">Fixel App</text>
+  <rect x="150" y="100" width="100" height="100" fill="#22D3EE"/>
+  <text x="200" y="240" font-family="monospace" font-size="12" fill="#94A3B8" text-anchor="middle">Connect & Generate</text>
+</svg>

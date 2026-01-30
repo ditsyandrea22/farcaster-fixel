@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0F172A"/>
+  <rect x="500" y="215" width="200" height="200" fill="#22D3EE"/>
+  <text x="600" y="100" font-family="monospace" font-size="48" fill="#F8FAFC" text-anchor="middle">Fixel</text>
+  <text x="600" y="480" font-family="monospace" font-size="28" fill="#94A3B8" text-anchor="middle">Generate and mint pixel NFTs from your FID</text>
+  <text x="600" y="530" font-family="monospace" font-size="20" fill="#64748B" text-anchor="middle">Built on Base • Powered by Warpcast</text>
+</svg>
