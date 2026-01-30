@@ -8,15 +8,31 @@ import { config } from '@/lib/wagmi'
 import { base } from 'wagmi/chains'
 import { NFT_ABI } from '@/lib/contractAbi'
 import { getUserProfile, type UserProfile, getFidFromAddress, generateNftImageUrl } from '@/lib/neynar'
+import { 
+  useInitializeSdk, 
+  useMiniAppDetection, 
+  useUserContext, 
+  useFarcasterWallet, 
+  useChainCapabilities,
+  formatAddress 
+} from '@/lib/farcaster-sdk'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw } from 'lucide-react'
+import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
 
 const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x5717EEFadDEACE4DbB7e7189C860A88b4D9978cF'
 const MINT_PRICE = '0.001' // ETH
+const BASE_CHAIN_ID = base.id
 
 export function MiniApp() {
+  // SDK State
+  const { isReady: sdkReady, error: sdkError } = useInitializeSdk()
+  const { isInMiniApp, isLoading: isDetectingMiniApp } = useMiniAppDetection()
+  const { context: userContext, isLoading: isLoadingContext, error: contextError } = useUserContext()
+  const { capabilities, isLoading: isLoadingCapabilities } = useChainCapabilities()
+  
+  // App State
   const [fid, setFid] = useState<number | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [nftImageUrl, setNftImageUrl] = useState<string>('')
@@ -24,9 +40,9 @@ export function MiniApp() {
   const [lookingUpFid, setLookingUpFid] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [sdkReady, setSdkReady] = useState(false)
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
 
+  // Wallet State using wagmi (with fallback to new SDK)
   const { address, isConnected, chainId } = useAccount()
   const { connect, connectors, isPending: isConnecting, error: connectError } = useConnect()
   const { disconnect } = useDisconnect()
@@ -41,42 +57,30 @@ export function MiniApp() {
     })
   
   // Check if user is on the wrong network
-  const isWrongNetwork = isConnected && chainId && chainId !== base.id
+  const isWrongNetwork = isConnected && chainId && chainId !== BASE_CHAIN_ID
+  
+  // Check if Base chain is supported by the mini app
+  const isBaseSupported = capabilities?.supportedChains.some(chain => chain.id === BASE_CHAIN_ID) ?? true
 
-  // Initialize SDK with proper error handling
+  // Set FID from user context (new SDK)
   useEffect(() => {
-    const initSdk = async () => {
-      try {
-        if (sdk && typeof sdk.actions.ready === 'function') {
-          await sdk.actions.ready()
-          setSdkReady(true)
-        } else {
-          console.warn('Farcaster SDK not available, running in standalone mode')
-          setSdkReady(true) // Still mark as ready for standalone mode
-        }
-      } catch (err) {
-        console.error('Failed to initialize FarCaster SDK:', err)
-        // Continue anyway - user can still use the app
-        setSdkReady(true)
-      }
+    if (userContext?.fid) {
+      setFid(userContext.fid)
     }
-    initSdk()
-  }, [])
+  }, [userContext])
 
-  // Extract FID from URL or auto-lookup from wallet
+  // Extract FID from URL as fallback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const urlFid = params.get('fid')
 
-    if (urlFid) {
+    if (urlFid && !fid) {
       const parsed = parseInt(urlFid, 10)
       if (!isNaN(parsed) && parsed > 0) {
         setFid(parsed)
-      } else {
-        console.warn('Invalid FID in URL:', urlFid)
       }
     }
-  }, [])
+  }, [fid])
 
   // Auto-lookup FID from wallet address when wallet connects
   useEffect(() => {
@@ -176,10 +180,40 @@ export function MiniApp() {
     }
   }, [fid])
 
+  // Show loading while SDK is initializing
+  if (!sdkReady || isDetectingMiniApp) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <Card className="w-full max-w-md p-8 text-center border border-gray-200">
+          <div className={styles.pulseLoader}>
+            <Loader2 className="mx-auto text-blue-600" size={40} />
+          </div>
+          <p className="text-gray-700 mt-6 font-medium">Initializing...</p>
+          <p className="text-gray-500 text-sm mt-2">Setting up FarCaster Mini App</p>
+        </Card>
+      </div>
+    )
+  }
+
   if (!fid) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <Card className="w-full max-w-md p-8 text-center border border-gray-200">
+          {/* Mini App Status Badge */}
+          <div className="flex justify-center gap-2 mb-4">
+            {isInMiniApp ? (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                <Shield size={12} />
+                In Mini App
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                <Globe size={12} />
+                Standalone Mode
+              </span>
+            )}
+          </div>
+
           {lookingUpFid ? (
             <>
               <div className={styles.pulseLoader}>
@@ -197,6 +231,17 @@ export function MiniApp() {
                   ? 'No FarCaster account linked to this wallet'
                   : 'Connect your wallet to get started'}
               </p>
+              
+              {/* Chain Support Warning */}
+              {!isBaseSupported && (
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex gap-2">
+                  <AlertCircle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-amber-700 text-sm text-left">
+                    Base chain may not be fully supported in this mini app environment.
+                  </p>
+                </div>
+              )}
+
               {!isConnected && (
                 <div className="mt-6 space-y-3">
                   {connectors.map((connector) => (
@@ -231,9 +276,26 @@ export function MiniApp() {
         <div className="text-center mb-8 mt-4">
           <h1 className="text-3xl font-bold text-gray-900 mb-1">Mint NFT</h1>
           <p className="text-gray-600 text-sm">Base Mainnet • FID #{fid}</p>
-          {!sdkReady && (
-            <p className="text-amber-600 text-xs mt-1">SDK initializing...</p>
-          )}
+          
+          {/* Status Indicators */}
+          <div className="flex justify-center gap-2 mt-2">
+            {isInMiniApp ? (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-600 text-xs font-medium rounded-full">
+                <Shield size={10} />
+                Mini App
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-full">
+                <Globe size={10} />
+                Standalone
+              </span>
+            )}
+            {sdkError && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 text-xs font-medium rounded-full">
+                SDK Error
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Loading State for NFT Generation */}
@@ -362,7 +424,7 @@ export function MiniApp() {
                   <p className="text-amber-700 text-sm">Wrong network detected</p>
                 </div>
                 <Button
-                  onClick={() => switchChain({ chainId: base.id })}
+                  onClick={() => switchChain({ chainId: BASE_CHAIN_ID })}
                   disabled={isSwitchingChain}
                   className="w-full bg-amber-600 hover:bg-amber-700 text-white"
                   size="sm"
@@ -413,11 +475,11 @@ export function MiniApp() {
             {/* Mint Button */}
             <Button
               onClick={handleMint}
-              disabled={isPending || !isConnected || loading || isWrongNetwork || isConfirming || isConfirmed}
+              disabled={isWritingContract || !isConnected || loading || isWrongNetwork || isConfirming || isConfirmed}
               className="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-6 text-base disabled:opacity-50 transition-all"
               size="lg"
             >
-              {isPending ? (
+              {isWritingContract ? (
                 <>
                   <Loader2 className="animate-spin mr-2" size={18} />
                   Preparing...
