@@ -257,13 +257,10 @@ export function MiniApp() {
     return tierMessages[Math.floor(Math.random() * tierMessages.length)]
   }
 
-  // Generate NFT based on luck (kehokian)
+  // Generate NFT based on luck (kehokian) - then directly mint
   const handleGenerate = async () => {
     setIsGenerating(true)
     setError(null)
-    
-    // Simulate fortune calculation animation
-    await new Promise(resolve => setTimeout(resolve, 2000))
     
     if (!walletAddress) {
       setError('Wallet not connected')
@@ -271,7 +268,13 @@ export function MiniApp() {
       return
     }
 
-    // Determine rarity based on wallet address (deterministic but feels random)
+    if (hasMinted) {
+      setError('You have already minted an NFT with this wallet')
+      setIsGenerating(false)
+      return
+    }
+
+    // Determine rarity based on wallet address
     const walletRarity = determineRarity(walletAddress)
     setRarity(walletRarity)
     setRevealedRarity(walletRarity)
@@ -280,9 +283,21 @@ export function MiniApp() {
     // Generate unique NFT image based on FID or wallet
     const imageUrl = fid ? `/api/nft-image?fid=${fid}&rarity=${walletRarity}` : `/api/nft-image?address=${walletAddress}&rarity=${walletRarity}`
     setNftImageUrl(imageUrl)
-    
-    setIsGenerated(true)
-    setIsGenerating(false)
+
+    // Now directly mint the NFT
+    try {
+      const effectiveFid = getEffectiveFid()
+      const hash = await writeContract({
+        address: NFT_CONTRACT_ADDRESS as `0x${string}`,
+        abi: NFT_ABI,
+        functionName: 'mint',
+        value: parseEther(MINT_PRICE),
+      })
+      setTxHash(hash || null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Mint failed')
+      setIsGenerating(false)
+    }
   }
 
   // Reset and try your luck again
@@ -534,14 +549,14 @@ export function MiniApp() {
 
               <Button
                 onClick={handleGenerate}
-                disabled={isGenerating}
+                disabled={isGenerating || isWritingContract || isConfirming}
                 className="w-full bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.5)]"
                 size="lg"
               >
-                {isGenerating ? (
+                {isGenerating || isWritingContract || isConfirming ? (
                   <>
                     <Loader2 className="animate-spin" size={18} />
-                    Calculating your destiny...
+                    {isConfirming ? 'Confirming on blockchain...' : 'Minting your NFT...'}
                   </>
                 ) : (
                   <>
@@ -685,20 +700,9 @@ export function MiniApp() {
                 ) : (
                   <span>
                     <Sparkles size={18} />
-                    Mint This NFT ({MINT_PRICE} ETH)
+                    Mint NFT ({MINT_PRICE} ETH)
                   </span>
                 )}
-              </Button>
-
-              {/* Regenerate Button */}
-              <Button
-                onClick={handleRegenerate}
-                variant="outline"
-                disabled={isWritingContract || isConfirming}
-                className="w-full font-mono text-xs"
-              >
-                <RefreshCw size={14} className="mr-2" />
-                Try My Luck Again
               </Button>
 
               {/* Disconnect */}
