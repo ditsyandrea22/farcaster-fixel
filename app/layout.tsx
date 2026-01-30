@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   title: 'Fixel FID | Terminal NFT Mint',
   description: 'Generate & Mint Pixel NFTs on Base Mainnet via FarCaster',
   metadataBase: new URL('https://farcaster-fixel.vercel.app'),
+  manifest: '/manifest.json',
   openGraph: {
     title: 'Fixel Pixel NFTs',
     description: 'Mint pixel NFTs from your FarCaster FID',

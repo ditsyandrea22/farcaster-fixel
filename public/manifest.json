@@ -1,0 +1,58 @@
+{
+  "name": "Fixel FID",
+  "short_name": "Fixel",
+  "description": "Mint pixel NFTs generated from your FarCaster FID on Base",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#10B981",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["entertainment", "lifestyle", "social"],
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/placeholder-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mint NFT",
+      "short_name": "Mint",
+      "description": "Mint your pixel NFT",
+      "url": "/mint",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Learn More",
+      "short_name": "Learn",
+      "description": "Learn about Fixel",
+      "url": "/learn",
+      "icons": [{ "src": "/icon.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "iarc_rating_id": "",
+  "manifest_version": 3,
+  "protocol_handlers": [],
+  "share_target": {
+    "action": "/mint",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}
