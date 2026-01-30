@@ -4,35 +4,137 @@ import { getRateLimitResult, defaultConfig } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
-function generatePixelPattern(fid: number): boolean[][] {
-  // Deterministic pixel pattern based on FID (12x12 grid)
-  const gridSize = 12
+// Rarity tiers with distribution rates
+const RARITY_TIERS = {
+  COMMON: { name: 'COMMON', rate: 80, color: '#6B7280' },
+  UNCOMMON: { name: 'UNCOMMON', rate: 15, color: '#10B981' },
+  SILVER: { name: 'SILVER', rate: 4, color: '#94A3B8' },
+  GOLD: { name: 'GOLD', rate: 0.99, color: '#F59E0B' },
+  PLATINUM: { name: 'PLATINUM', rate: 0.01, color: '#E5E7EB' },
+} as const
+
+export type RarityTier = keyof typeof RARITY_TIERS
+export const MAX_SUPPLY = 20000
+
+// Seeded random number generator for deterministic results
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed) * 10000
+  return x - Math.floor(x)
+}
+
+// Hash wallet address to number for seeding
+function hashAddress(address: string): number {
+  let hash = 0
+  for (let i = 0; i < address.length; i++) {
+    const char = address.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  return Math.abs(hash)
+}
+
+// Determine rarity based on seeded random
+function determineRarity(address: string): RarityTier {
+  const seed = hashAddress(address)
+  const rand = seededRandom(seed) * 100
+  
+  let cumulative = 0
+  const rates = [
+    { tier: 'COMMON' as RarityTier, rate: RARITY_TIERS.COMMON.rate },
+    { tier: 'UNCOMMON' as RarityTier, rate: RARITY_TIERS.UNCOMMON.rate },
+    { tier: 'SILVER' as RarityTier, rate: RARITY_TIERS.SILVER.rate },
+    { tier: 'GOLD' as RarityTier, rate: RARITY_TIERS.GOLD.rate },
+    { tier: 'PLATINUM' as RarityTier, rate: RARITY_TIERS.PLATINUM.rate },
+  ]
+  
+  for (const { tier, rate } of rates) {
+    cumulative += rate
+    if (rand <= cumulative) {
+      return tier
+    }
+  }
+  return 'COMMON'
+}
+
+// Generate unique pattern based on wallet address and rarity
+function generatePixelPattern(address: string, rarity: RarityTier): boolean[][] {
+  const seed = hashAddress(address)
+  const gridSize = rarity === 'PLATINUM' ? 16 : rarity === 'GOLD' ? 14 : 12
   const pattern: boolean[][] = Array(gridSize)
     .fill(null)
     .map(() => Array(gridSize).fill(false))
-
-  // Generate pattern using FID as seed
+  
+  // Adjust density based on rarity
+  const densityMultiplier = rarity === 'PLATINUM' ? 1.5 : rarity === 'GOLD' ? 1.3 : rarity === 'SILVER' ? 1.2 : 1
+  
   for (let i = 0; i < gridSize; i++) {
     for (let j = 0; j < gridSize; j++) {
-      const hash = (fid * (i + 1) * (j + 1) * 73856093) ^ ((fid >> 16) * 19349663)
-      pattern[i][j] = (hash & 1) === 1
+      const hash = (seed * (i + 1) * (j + 1) * 73856093) ^ ((seed >> 16) * 19349663)
+      const threshold = 0.5 / densityMultiplier
+      pattern[i][j] = (hash & 1) === 1 && seededRandom(hash) > threshold
     }
   }
-
+  
   return pattern
 }
 
-function generateColors(fid: number): { primary: string; secondary: string; accent: string } {
-  // Deterministic colors based on FID
-  const hue1 = (fid * 137.5) % 360
+// Generate colors based on wallet address and rarity
+function generateColors(address: string, rarity: RarityTier): { primary: string; secondary: string; accent: string; bgGradient: string } {
+  const seed = hashAddress(address)
+  
+  // Adjust saturation and lightness based on rarity
+  const rarityBoost = rarity === 'PLATINUM' ? 40 : rarity === 'GOLD' ? 30 : rarity === 'SILVER' ? 20 : 0
+  
+  const hue1 = (seed * 137.5) % 360
   const hue2 = (hue1 + 180) % 360
-  const sat = 60 + ((fid % 20) * 2)
-
-  return {
-    primary: `hsl(${hue1}, ${sat}%, 55%)`,
-    secondary: `hsl(${hue2}, ${sat}%, 45%)`,
-    accent: `hsl(${(hue1 + 60) % 360}, 80%, 60%)`,
+  const sat = 60 + ((seed % 20) * 2) + rarityBoost
+  const light = 55 + (rarityBoost / 2)
+  
+  // Special colors for higher rarities
+  if (rarity === 'PLATINUM') {
+    return {
+      primary: 'linear-gradient(135deg, #E5E7EB, #9CA3AF)',
+      secondary: 'linear-gradient(135deg, #D1D5DB, #6B7280)',
+      accent: '#FFFFFF',
+      bgGradient: 'linear-gradient(135deg, #F9FAFB 0%, #E5E7EB 50%, #D1D5DB 100%)',
+    }
   }
+  
+  if (rarity === 'GOLD') {
+    return {
+      primary: `linear-gradient(135deg, #F59E0B, #D97706)`,
+      secondary: `linear-gradient(135deg, #FCD34D, #F59E0B)`,
+      accent: '#FEF3C7',
+      bgGradient: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 50%, #FDE68A 100%)',
+    }
+  }
+  
+  return {
+    primary: `hsl(${hue1}, ${sat}%, ${light}%)`,
+    secondary: `hsl(${hue2}, ${sat}%, ${light - 10}%)`,
+    accent: `hsl(${(hue1 + 60) % 360}, ${Math.min(sat + 20, 100)}%, ${Math.min(light + 15, 80)}%)`,
+    bgGradient: `linear-gradient(135deg, hsl(${hue1}, ${sat}%, 98%) 0%, hsl(${hue2}, ${sat}%, 96%) 100%)`,
+  }
+}
+
+// Get tier display properties
+function getTierProperties(rarity: RarityTier) {
+  const tier = RARITY_TIERS[rarity]
+  return {
+    name: tier.name,
+    color: tier.color,
+    glowIntensity: rarity === 'PLATINUM' ? 0.8 : rarity === 'GOLD' ? 0.6 : rarity === 'SILVER' ? 0.4 : 0.2,
+    borderWidth: rarity === 'PLATINUM' ? 4 : rarity === 'GOLD' ? 3 : rarity === 'SILVER' ? 2 : 1,
+    hasSparkles: rarity === 'PLATINUM' || rarity === 'GOLD' || rarity === 'SILVER',
+    hasHalo: rarity === 'PLATINUM',
+  }
+}
+
+// Generate NFT serial number based on address
+function generateSerialNumber(address: string): string {
+  const seed = hashAddress(address)
+  const num = (seed % MAX_SUPPLY) + 1
+  return `#${num.toString().padStart(5, '0')}/${MAX_SUPPLY}`
 }
 
 export async function GET(request: NextRequest) {
@@ -58,21 +160,32 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const fid = request.nextUrl.searchParams.get('fid')
-    const username = request.nextUrl.searchParams.get('username') || 'Farcaster'
+    const address = request.nextUrl.searchParams.get('address')
+    const walletShort = request.nextUrl.searchParams.get('wallet') || ''
 
-    if (!fid) {
-      return NextResponse.json({ error: 'FID is required' }, { status: 400 })
+    if (!address) {
+      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 })
     }
 
-    const fidNumber = parseInt(fid, 10)
-    const pattern = generatePixelPattern(fidNumber)
-    const colors = generateColors(fidNumber)
+    const rarity = determineRarity(address)
+    const tierProps = getTierProperties(rarity)
+    const colors = generateColors(address, rarity)
+    const pattern = generatePixelPattern(address, rarity)
+    const serialNumber = generateSerialNumber(address)
 
-    const pixelSize = 60
-    const gridSize = 12
+    const pixelSize = rarity === 'PLATINUM' ? 50 : rarity === 'GOLD' ? 55 : 60
+    const gridSize = pattern.length
     const totalSize = pixelSize * gridSize
     const padding = 120
+
+    // Build glow effect for rare tiers
+    const glowStyle = tierProps.hasSparkles ? {
+      boxShadow: `
+        0 0 ${30 + tierProps.glowIntensity * 40}px ${tierProps.color}40,
+        0 0 ${60 + tierProps.glowIntensity * 80}px ${tierProps.color}20,
+        0 0 ${100 + tierProps.glowIntensity * 100}px ${tierProps.color}10
+      `,
+    } : {}
 
     const response = new ImageResponse(
       (
@@ -84,11 +197,29 @@ export async function GET(request: NextRequest) {
             justifyContent: 'center',
             width: '1200px',
             height: '1200px',
-            background: `linear-gradient(135deg, ${colors.primary}15 0%, ${colors.secondary}15 100%), linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%)`,
+            background: colors.bgGradient,
             fontFamily: 'system-ui, -apple-system',
             position: 'relative',
+            overflow: 'hidden',
           }}
         >
+          {/* Halo effect for Platinum */}
+          {tierProps.hasHalo && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '600px',
+                height: '600px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(229, 231, 235, 0.3) 0%, transparent 70%)',
+                animation: 'pulse 3s ease-in-out infinite',
+              }}
+            />
+          )}
+
           {/* Decorative background elements */}
           <div
             style={{
@@ -98,8 +229,8 @@ export async function GET(request: NextRequest) {
               width: '200px',
               height: '200px',
               borderRadius: '50%',
-              background: colors.primary,
-              opacity: 0.08,
+              background: tierProps.color,
+              opacity: 0.08 * tierProps.glowIntensity + 0.05,
             }}
           />
           <div
@@ -110,8 +241,8 @@ export async function GET(request: NextRequest) {
               width: '150px',
               height: '150px',
               borderRadius: '50%',
-              background: colors.secondary,
-              opacity: 0.06,
+              background: tierProps.color,
+              opacity: 0.06 * tierProps.glowIntensity + 0.03,
             }}
           />
 
@@ -127,17 +258,45 @@ export async function GET(request: NextRequest) {
               zIndex: 10,
             }}
           >
+            {/* Rarity Badge */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '16px 32px',
+                background: tierProps.hasSparkles 
+                  ? `linear-gradient(135deg, ${tierProps.color}30, ${tierProps.color}10)`
+                  : `${tierProps.color}15`,
+                border: `2px solid ${tierProps.color}${tierProps.hasSparkles ? '80' : '40'}`,
+                borderRadius: '16px',
+                fontSize: '24px',
+                fontWeight: '900',
+                letterSpacing: '4px',
+                textShadow: tierProps.hasSparkles ? `0 0 20px ${tierProps.color}60` : 'none',
+                color: tierProps.hasSparkles ? tierProps.color : tierProps.color,
+                textTransform: 'uppercase',
+                ...glowStyle,
+              }}
+            >
+              {tierProps.hasSparkles && <span style={{ fontSize: '20px' }}>✨</span>}
+              {tierProps.name}
+              {tierProps.hasSparkles && <span style={{ fontSize: '20px' }}>✨</span>}
+            </div>
+
             {/* Pixel Art Grid */}
             <div
               style={{
                 display: 'grid',
                 gridTemplateColumns: `repeat(${gridSize}, ${pixelSize}px)`,
                 gap: '2px',
-                padding: '20px',
+                padding: '24px',
                 background: 'white',
-                borderRadius: '16px',
+                borderRadius: '20px',
                 boxShadow: '0 20px 60px rgba(0, 0, 0, 0.1)',
-                border: `2px solid ${colors.primary}40`,
+                border: `${tierProps.borderWidth}px solid ${tierProps.color}60`,
+                ...glowStyle,
               }}
             >
               {pattern.map((row, i) =>
@@ -147,9 +306,11 @@ export async function GET(request: NextRequest) {
                     style={{
                       width: `${pixelSize}px`,
                       height: `${pixelSize}px`,
-                      background: isActive ? colors.primary : colors.accent,
+                      background: isActive 
+                        ? (typeof colors.primary === 'string' ? colors.primary : '#6B7280')
+                        : (typeof colors.accent === 'string' ? colors.accent : '#E5E7EB'),
                       borderRadius: '4px',
-                      opacity: isActive ? 1 : 0.15,
+                      opacity: isActive ? 1 : 0.1,
                       transition: 'all 0.3s ease',
                     }}
                   />
@@ -157,7 +318,7 @@ export async function GET(request: NextRequest) {
               )}
             </div>
 
-            {/* FID Badge */}
+            {/* Serial Number */}
             <div
               style={{
                 display: 'flex',
@@ -169,29 +330,18 @@ export async function GET(request: NextRequest) {
             >
               <div
                 style={{
-                  fontSize: '48px',
-                  fontWeight: '900',
-                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.accent})`,
-                  backgroundClip: 'text',
-                  color: 'transparent',
+                  fontSize: '32px',
+                  fontWeight: '700',
+                  color: tierProps.color,
                   letterSpacing: '2px',
+                  fontFamily: 'monospace',
                 }}
               >
-                FID {fidNumber}
-              </div>
-              <div
-                style={{
-                  fontSize: '24px',
-                  fontWeight: '600',
-                  color: colors.primary,
-                  letterSpacing: '1px',
-                }}
-              >
-                {username.toUpperCase()}
+                {serialNumber}
               </div>
             </div>
 
-            {/* Base Badge */}
+            {/* Wallet Address */}
             <div
               style={{
                 display: 'flex',
@@ -199,18 +349,33 @@ export async function GET(request: NextRequest) {
                 justifyContent: 'center',
                 gap: '8px',
                 padding: '12px 24px',
-                background: `${colors.primary}15`,
-                border: `2px solid ${colors.primary}40`,
+                background: `${tierProps.color}15`,
+                border: `2px solid ${tierProps.color}40`,
                 borderRadius: '12px',
                 fontSize: '14px',
                 fontWeight: '600',
-                color: colors.primary,
+                color: tierProps.color,
                 letterSpacing: '0.5px',
+                fontFamily: 'monospace',
               }}
             >
               <span style={{ fontSize: '20px' }}>⛓️</span>
-              BASE MAINNET
+              {walletShort || `${address.slice(0, 6)}...${address.slice(-4)}`}
             </div>
+          </div>
+
+          {/* Watermark */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '30px',
+              right: '30px',
+              fontSize: '12px',
+              color: '#9CA3AF',
+              fontFamily: 'monospace',
+            }}
+          >
+            AI GENERATED • {new Date().getFullYear()}
           </div>
         </div>
       ),
