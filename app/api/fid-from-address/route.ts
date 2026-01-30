@@ -43,9 +43,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Server configuration error: NEYNAR_API_KEY not set' }, { status: 500 })
     }
 
-    // Query Neynar to find FID by wallet address
+    // Query Neynar to find FID by wallet address using verified_addresses
+    // Ref: https://docs.neynar.com/docs/fetching-farcaster-user-based-on-ethereum-address
     const response = await fetch(
-      `https://api.neynar.com/v2/farcaster/user/by_verification?address=${address}`,
+      `https://api.neynar.com/v2/farcaster/user/search?verified_addresses.ethereum=${address}`,
       {
         headers: {
           'x-api-key': NEYNAR_API_KEY || '',
@@ -56,24 +57,41 @@ export async function GET(request: NextRequest) {
     if (!response.ok) {
       console.error('Neynar API error:', response.statusText)
       return NextResponse.json(
-        { error: 'No Farcaster account found for this address' },
-        { status: 404 }
+        { error: 'Failed to fetch user data from Neynar' },
+        { status: response.status }
       )
     }
 
     const data = await response.json()
     
-    if (!data.user || !data.user.fid) {
+    // Neynar returns users array
+    const users = data.users || []
+    
+    if (!users || users.length === 0) {
       return NextResponse.json(
-        { error: 'No FID found for this address' },
+        { error: 'No FarCaster account found for this address' },
+        { status: 404 }
+      )
+    }
+
+    // Find user that has the verified Ethereum address
+    const user = users.find((u: any) => 
+      u.verified_addresses?.ethereum?.some((addr: string) => 
+        addr.toLowerCase() === address.toLowerCase()
+      )
+    )
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No FarCaster account found for this address' },
         { status: 404 }
       )
     }
 
     return NextResponse.json({
-      fid: data.user.fid,
-      username: data.user.username,
-      displayName: data.user.display_name,
+      fid: user.fid,
+      username: user.username,
+      displayName: user.display_name,
     })
   } catch (error) {
     console.error('Error in fid-from-address route:', error)
