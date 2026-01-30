@@ -88,58 +88,6 @@ export function assertFid(fid: unknown, context?: string): asserts fid is number
 }
 
 // ============================================================================
-// Frame v2 Message Verification
-// ============================================================================
-
-/**
- * Extract FID from Frame v2 trusted message bytes
- * Requires @farcaster/hub-nodejs package
- * 
- * @param messageBytes - Base64 encoded message bytes from trustedData
- * @returns Extracted FID, or null if extraction fails
- */
-export async function extractFidFromFrameMessage(messageBytes: string): Promise<number | null> {
-  try {
-    // Dynamic import to avoid requiring @farcaster/hub-nodejs if not installed
-    const { Message } = await import('@farcaster/hub-nodejs')
-    
-    // Use atob for base64 decoding (works in browser and Node.js)
-    const binaryString = atob(messageBytes)
-    const bytes = new Uint8Array(binaryString.length)
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i)
-    }
-    
-    const message = Message.decode(bytes)
-    const fid = message.data?.fid
-    
-    if (fid === undefined || fid === null) {
-      console.warn('No FID found in Frame message')
-      return null
-    }
-    
-    return fid as number
-  } catch (error) {
-    console.error('Failed to extract FID from Frame message:', error)
-    return null
-  }
-}
-
-/**
- * Validate and extract FID from Frame v2 request body
- * @param body - Request body containing trustedData
- * @returns Extracted FID, or null if invalid
- */
-export async function extractFidFromFrameRequest(body: any): Promise<number | null> {
-  if (!body?.trustedData?.messageBytes) {
-    console.warn('No trustedData.messageBytes found in Frame request')
-    return null
-  }
-  
-  return extractFidFromFrameMessage(body.trustedData.messageBytes)
-}
-
-// ============================================================================
 // Neynar API Helpers
 // ============================================================================
 
