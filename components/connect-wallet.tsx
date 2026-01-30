@@ -123,30 +123,38 @@ export function ConnectWallet({
           </div>
         )}
 
-        {/* FarCast Wallet option (if in mini app) */}
-        {isFarcasterWalletConnected === false && typeof window !== 'undefined' && (
-          <Button
-            onClick={async () => {
-              await connectToFarcasterWallet()
-              onConnect?.()
-            }}
-            disabled={isAnyConnecting}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
-            size="lg"
-          >
-            {isConnectingFarcasterWallet ? (
-              <>
-                <Loader2 className="animate-spin mr-2" size={18} />
-                Connecting...
-              </>
-            ) : (
-              <>
-                <Wallet size={18} className="mr-2" />
-                Use FarCast Wallet
-              </>
-            )}
-          </Button>
-        )}
+        {/* FarCast Wallet option (only in mini app context) */}
+        {isFarcasterWalletConnected === false && typeof window !== 'undefined' && (() => {
+          // Check if we're in a mini app context (Farcaster app)
+          const isMiniApp = window.parent !== window || navigator.userAgent.includes('Farcaster');
+          
+          if (isMiniApp) {
+            return (
+              <Button
+                onClick={async () => {
+                  await connectToFarcasterWallet()
+                  onConnect?.()
+                }}
+                disabled={isAnyConnecting}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white"
+                size="lg"
+              >
+                {isConnectingFarcasterWallet ? (
+                  <>
+                    <Loader2 className="animate-spin mr-2" size={18} />
+                    Connecting...
+                  </>
+                ) : (
+                  <>
+                    <Wallet size={18} className="mr-2" />
+                    Use FarCast Wallet
+                  </>
+                )}
+              </Button>
+            )
+          }
+          return null;
+        })()}
 
         {/* External wallet options */}
         <div className="space-y-2">
