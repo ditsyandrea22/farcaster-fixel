@@ -216,9 +216,9 @@ export function MiniApp() {
           <p className="text-foreground mt-6 font-mono font-medium">Initializing...</p>
           <p className="text-muted-foreground text-sm mt-2 font-mono">Setting up AI NFT Generator</p>
           <div className="mt-4 font-mono text-xs text-primary">
-            <p>{'>'} Loading AI modules...</p>
-            <p className="animation-delay-100">{'>'} Establishing connection...</p>
-            <p className="animation-delay-200">{'>'} Preparing environment...</p>
+            <p className="text-primary">&gt; Loading AI modules...</p>
+            <p className="animation-delay-100">&gt; Establishing connection...</p>
+            <p className="animation-delay-200">&gt; Preparing environment...</p>
           </div>
         </Card>
       </div>
@@ -259,7 +259,7 @@ export function MiniApp() {
 
           {/* Rarity Info */}
           <div className="mt-4 p-3 bg-secondary/20 border border-border rounded-lg">
-            <p className="text-xs font-mono text-muted-foreground mb-2">{'>'} Rarity Distribution:</p>
+            <p className="text-xs font-mono text-muted-foreground mb-2">&gt; Rarity Distribution:</p>
             <div className="grid grid-cols-2 gap-1 text-xs font-mono">
               <span className="text-gray-400">✨ PLATINUM: 0.01%</span>
               <span className="text-yellow-500">👑 GOLD: 0.99%</span>
@@ -438,8 +438,8 @@ export function MiniApp() {
               <p className="text-muted-foreground text-xs mt-2 font-mono">Creating unique design from wallet address</p>
               <div className="mt-4 font-mono text-xs text-muted-foreground">
                 <p>{'>'} Analyzing wallet pattern...</p>
-                <p className="animation-delay-100">{'>'} Calculating rarity...</p>
-                <p className="animation-delay-200">{'>'} Rendering NFT...</p>
+                <p className="animation-delay-100">&gt; Calculating rarity...</p>
+                <p className="animation-delay-200">&gt; Rendering NFT...</p>
               </div>
             </div>
           </Card>
