@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useAccount, useConnect, useDisconnect, useWriteContract, useSwitchChain, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther } from 'viem'
 import { config } from '@/lib/wagmi'
 import { base } from 'wagmi/chains'
@@ -85,7 +85,6 @@ export function MiniApp() {
   const { connect, connectors, isPending: isConnecting, error: connectError } = useConnect()
   const { disconnect } = useDisconnect()
   const { writeContract, isPending: isWritingContract, error: writeError } = useWriteContract()
-  const { switchChain, isPending: isSwitchingChain } = useSwitchChain()
   
   // Wait for transaction confirmation
   const { isLoading: isConfirming, isSuccess: isConfirmed, isError: isTxError, error: confirmError } = 
@@ -120,7 +119,7 @@ export function MiniApp() {
       
       // Generate unique NFT image based on wallet address
       const walletShort = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-      const imageUrl = `/api/nft-image?address=${walletAddress}&wallet=${walletShort}`
+      const imageUrl = `/api/nft-image?address=${walletAddress}`
       setNftImageUrl(imageUrl)
     }
   }, [walletAddress])
@@ -509,39 +508,24 @@ export function MiniApp() {
               </div>
             )}
 
-            {isWrongNetwork ? (
-              <Button
-                onClick={() => switchChain({ chainId: BASE_CHAIN_ID })}
-                disabled={isSwitchingChain}
-                className="w-full bg-accent hover:bg-accent/80 text-terminal-dark font-mono font-bold flex items-center justify-center gap-2"
-              >
-                {isSwitchingChain ? (
-                  <Loader2 className="animate-spin" size={18} />
-                ) : (
-                  <TerminalIcon size={18} />
-                )}
-                Switch to Base
-              </Button>
-            ) : (
-              <Button
+            <Button
                 onClick={handleMint}
                 disabled={isWritingContract || isConfirming}
                 className="w-full bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all duration-300 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
                 size="lg"
               >
-                {isWritingContract || isConfirming ? (
-                  <>
-                    <Loader2 className="animate-spin" size={18} />
-                    {isConfirming ? 'Confirming...' : 'Minting...'}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={18} />
-                    Mint NFT ({MINT_PRICE} ETH)
-                  </>
-                )}
-              </Button>
-            )}
+                  {isWritingContract || isConfirming ? (
+                    <span>
+                      <Loader2 className="animate-spin" size={18} />
+                      {isConfirming ? 'Confirming...' : 'Minting...'}
+                    </span>
+                  ) : (
+                    <span>
+                      <Sparkles size={18} />
+                      Mint NFT ({MINT_PRICE} ETH)
+                    </span>
+                  )}
+              </Button>}
 
             <Button
               onClick={() => disconnect()}

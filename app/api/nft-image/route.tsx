@@ -215,7 +215,6 @@ export async function GET(request: NextRequest) {
                 height: '600px',
                 borderRadius: '50%',
                 background: 'radial-gradient(circle, rgba(229, 231, 235, 0.3) 0%, transparent 70%)',
-                animation: 'pulse 3s ease-in-out infinite',
               }}
             />
           )}
