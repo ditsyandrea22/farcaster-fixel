@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
                   letterSpacing: '2px',
                 }}
               >
-                FID #{fidNumber}
+                FID {fidNumber}
               </div>
               <div
                 style={{
