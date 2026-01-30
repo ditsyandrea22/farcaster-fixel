@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { sdk } from '@farcaster/miniapp-sdk'
 import { useAccount, useConnect, useDisconnect, useWriteContract, useSwitchChain, useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther } from 'viem'
 import { config } from '@/lib/wagmi'

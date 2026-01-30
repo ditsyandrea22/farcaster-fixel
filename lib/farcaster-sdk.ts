@@ -6,7 +6,25 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { sdk } from '@farcaster/miniapp-sdk';
+
+// Dynamic import of SDK to avoid SSR issues
+let sdk: any = null;
+
+async function getSdk() {
+  if (sdk) return sdk;
+  
+  if (typeof window !== 'undefined') {
+    try {
+      const miniappsdk = await import('@farcaster/miniapp-sdk');
+      sdk = miniappsdk.sdk || miniappsdk;
+      return sdk;
+    } catch (err) {
+      console.warn('Failed to load FarCaster SDK:', err);
+      return null;
+    }
+  }
+  return null;
+}
 
 // ============================================================================
 // Type Definitions
@@ -80,8 +98,9 @@ export function useInitializeSdk() {
   useEffect(() => {
     const init = async () => {
       try {
-        if (sdk && typeof sdk.actions.ready === 'function') {
-          await sdk.actions.ready();
+        const farcasterSdk = await getSdk();
+        if (farcasterSdk && typeof farcasterSdk.actions?.ready === 'function') {
+          await farcasterSdk.actions.ready();
           setIsReady(true);
           console.log('FarCaster SDK initialized successfully');
         } else {
@@ -124,8 +143,9 @@ export function useMiniAppDetection(): MiniAppState {
         let inMiniApp = false;
         
         // Method 1: Check SDK method
-        if (sdk && typeof (sdk as any).isInMiniApp === 'function') {
-          inMiniApp = (sdk as any).isInMiniApp();
+        const farcasterSdk = await getSdk();
+        if (farcasterSdk && typeof (farcasterSdk as any).isInMiniApp === 'function') {
+          inMiniApp = (farcasterSdk as any).isInMiniApp();
         }
         // Method 2: Check for Warpcast/UserAgent
         else if (typeof window !== 'undefined') {
@@ -178,8 +198,9 @@ export function useUserContext(): {
         let ctx: UserContext | null = null;
         
         // Method 1: Try SDK context method
-        if (sdk && typeof (sdk as any).getContext === 'function') {
-          const sdkContext = await (sdk as any).getContext();
+        const farcasterSdk = await getSdk();
+        if (farcasterSdk && typeof (farcasterSdk as any).getContext === 'function') {
+          const sdkContext = await (farcasterSdk as any).getContext();
           if (sdkContext) {
             ctx = {
               fid: sdkContext.fid,
@@ -238,12 +259,16 @@ export function useFarcasterWallet(): WalletState & {
     error: null,
   });
 
-  // Use SDK wallet if available
-  const sdkWallet = (sdk as any)?.wallet;
+  // Get SDK wallet reference
+  const sdkWalletRef = useCallback(async () => {
+    const farcasterSdk = await getSdk();
+    return (farcasterSdk as any)?.wallet;
+  }, []);
 
   const connect = useCallback(async () => {
     setWalletState((prev: WalletState) => ({ ...prev, isConnecting: true, error: null }));
     try {
+      const sdkWallet = await sdkWalletRef();
       if (sdkWallet && typeof sdkWallet.connect === 'function') {
         const result = await sdkWallet.connect();
         if (result) {
@@ -282,10 +307,11 @@ export function useFarcasterWallet(): WalletState & {
         error: err instanceof Error ? err : new Error('Connection failed'),
       }));
     }
-  }, [sdkWallet]);
+  }, [sdkWalletRef]);
 
   const disconnect = useCallback(async () => {
     try {
+      const sdkWallet = await sdkWalletRef();
       if (sdkWallet && typeof sdkWallet.disconnect === 'function') {
         await sdkWallet.disconnect();
       }
@@ -299,10 +325,11 @@ export function useFarcasterWallet(): WalletState & {
     } catch (err) {
       console.error('Failed to disconnect:', err);
     }
-  }, [sdkWallet]);
+  }, [sdkWalletRef]);
 
   const switchChain = useCallback(async (chainId: number) => {
     try {
+      const sdkWallet = await sdkWalletRef();
       if (sdkWallet && typeof sdkWallet.switchChain === 'function') {
         await sdkWallet.switchChain(chainId);
       } else {
@@ -320,10 +347,11 @@ export function useFarcasterWallet(): WalletState & {
         error: err instanceof Error ? err : new Error('Chain switch failed'),
       }));
     }
-  }, [sdkWallet]);
+  }, [sdkWalletRef]);
 
   const sendTransaction = useCallback(async (params: { to: string; value: string; data?: string }): Promise<`0x${string}`> => {
     try {
+      const sdkWallet = await sdkWalletRef();
       if (sdkWallet && typeof sdkWallet.sendTransaction === 'function') {
         return await sdkWallet.sendTransaction(params);
       } else {
@@ -344,7 +372,7 @@ export function useFarcasterWallet(): WalletState & {
     } catch (err) {
       throw err instanceof Error ? err : new Error('Transaction failed');
     }
-  }, [sdkWallet, walletState.address]);
+  }, [sdkWalletRef, walletState.address]);
 
   return {
     ...walletState,
@@ -378,8 +406,9 @@ export function useChainCapabilities(): {
         let caps: CapabilityInfo | null = null;
         
         // Try SDK capabilities method
-        if (sdk && typeof (sdk as any).getCapabilities === 'function') {
-          caps = await (sdk as any).getCapabilities();
+        const farcasterSdk = await getSdk();
+        if (farcasterSdk && typeof (farcasterSdk as any).getCapabilities === 'function') {
+          caps = await (farcasterSdk as any).getCapabilities();
         } else {
           // Default capabilities for chains commonly supported by mini apps
           caps = {
