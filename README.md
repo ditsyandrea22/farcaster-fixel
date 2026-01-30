@@ -1,13 +1,13 @@
-# Base Mainnet NFT Mint - Farcaster Mini App
+# Base Mainnet NFT Mint - FarCaster Mini App
 
-A complete Farcaster Mini App for minting NFTs on Base mainnet. This application includes both a Frame v2 cast button and a full-featured mini app experience.
+A complete FarCaster Mini App for minting NFTs on Base mainnet. This application includes both a Frame v2 cast button and a full-featured mini app experience.
 
 ## Features
 
-- **Farcaster Integration**: Seamlessly integrated with Farcaster Frames v2
+- **FarCaster Integration**: Seamlessly integrated with FarCaster Frames v2
 - **Base Mainnet**: Native support for Base mainnet NFT minting
 - **Wallet Connection**: Support for WalletConnect and injected wallets via wagmi
-- **Neynar API**: Reads user profile data from Farcaster
+- **Neynar API**: Reads user profile data from FarCaster
 - **Signature-based Minting**: Secure minting with ERC721 contract interaction
 - **Dynamic UI**: Beautiful, responsive interface with Tailwind CSS
 
@@ -16,13 +16,13 @@ A complete Farcaster Mini App for minting NFTs on Base mainnet. This application
 ### Prerequisites
 
 - Node.js 18+
-- npm or yarn
+- npm or pnpm
 
 ### Installation
 
 1. **Install dependencies**:
 ```bash
-npm install
+pnpm install
 ```
 
 2. **Environment Variables** (already configured in `.env.local`):
@@ -34,7 +34,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 3. **Start development server**:
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Visit `http://localhost:3000` to see the landing page.
@@ -44,13 +44,16 @@ Visit `http://localhost:3000` to see the landing page.
 ### Key Files
 
 - **`/app/page.tsx`** - Landing page with information about the mint
-- **`/app/mint/page.tsx`** - Mini app page (opened from Farcaster Frame)
+- **`/app/mint/page.tsx`** - Mini app page (opened from FarCaster Frame)
 - **`/components/mini-app.tsx`** - Main Mini App component with wallet connection and minting logic
-- **`/app/api/frame/route.ts`** - Frame v2 endpoint for Farcaster integration
+- **`/components/connect-wallet.tsx`** - Reusable wallet connection UI component
+- **`/hooks/useWallet.ts`** - Custom hook for wallet connection
+- **`/app/api/frame/route.ts`** - Frame v2 endpoint for FarCaster integration
 - **`/lib/wagmi.ts`** - Wagmi configuration for Base mainnet
 - **`/lib/neynar.ts`** - Neynar API integration for profile fetching
+- **`/lib/farcaster-sdk.ts`** - FarCaster Mini App SDK utilities
 - **`/lib/contractAbi.ts`** - NFT contract ABI
-- **`/public/.well-known/farcaster.json`** - Farcaster app registry
+- **`/public/.well-known/farcaster.json`** - FarCaster app registry
 
 ### Contract Details
 
@@ -65,11 +68,11 @@ Visit `http://localhost:3000` to see the landing page.
 
 1. User visits the landing page at `/`
 2. Page explains the feature and provides information about the NFT mint
-3. Farcaster Frame button directs to `/api/frame` endpoint
+3. FarCaster Frame button directs to `/api/frame` endpoint
 
-### Farcaster Frame v2 Flow
+### FarCaster Frame v2 Flow
 
-1. Frame is shared as a cast in Farcaster
+1. Frame is shared as a cast in FarCaster
 2. User clicks "Mint on Base" button in the Frame
 3. Opens the mini app at `/mint?fid={user_fid}`
 4. Mini app loads user profile via Neynar API
@@ -78,19 +81,109 @@ Visit `http://localhost:3000` to see the landing page.
 7. Wagmi writes to the contract
 8. NFT is minted and transferred to the user's wallet
 
-### Mini App Components
+## Wallet Connection
 
-**Wallet Connection**
+This project uses wagmi for wallet connection following the [FarCast Mini App wallet guidelines](https://miniapps.farcaster.xyz/docs/guides/wallets).
+
+### Using the useWallet Hook
+
+The [`useWallet`](hooks/useWallet.ts) hook provides a unified interface for wallet connections:
+
+```typescript
+import { useWallet } from '@/hooks/useWallet'
+
+function MyComponent() {
+  const {
+    address,
+    isConnected,
+    chainId,
+    connect,
+    disconnect,
+    isConnecting,
+    writeContract,
+    isWritingContract,
+    isConfirmed,
+  } = useWallet()
+
+  // Connect to wallet
+  const handleConnect = () => connect()
+
+  // Disconnect from wallet
+  const handleDisconnect = () => disconnect()
+
+  // Write to contract
+  const handleMint = () => {
+    writeContract({
+      address: CONTRACT_ADDRESS,
+      abi: NFT_ABI,
+      functionName: 'mint',
+      args: [BigInt(fid)],
+      value: parseEther('0.001'),
+    })
+  }
+
+  return (
+    <div>
+      {isConnected ? (
+        <p>Connected: {address}</p>
+      ) : (
+        <button onClick={handleConnect}>Connect Wallet</button>
+      )}
+    </div>
+  )
+}
+```
+
+### Using the ConnectWallet Component
+
+The [`ConnectWallet`](components/connect-wallet.tsx) component provides a ready-to-use UI:
+
+```typescript
+import { ConnectWallet } from '@/components/connect-wallet'
+
+function MyPage() {
+  return (
+    <div>
+      <ConnectWallet />
+    </div>
+  )
+}
+```
+
+#### Props
+
+- `showOnlyWhenConnected`: If true, only renders when wallet is connected
+- `className`: Additional CSS classes
+- `onConnect`: Callback fired after successful connection
+
+### Supported Wallets
+
+- **Injected Wallets**: MetaMask, Coinbase Wallet, Brave Wallet
+- **WalletConnect**: Via WalletConnect modal (requires `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`)
+- **FarCast Wallet**: Native wallet when running inside the FarCast app
+
+### Network Support
+
+- **Base Mainnet** (chain ID: 8453)
+- Network switching is handled automatically
+
+## Mini App Components
+
+### Wallet Connection
+
 - Supports WalletConnect and injected wallets
 - Displays connected address
 - Shows balance and connection status
+- Native FarCast wallet support when in mini app
 
-**Profile Display**
-- Fetches Farcaster profile via Neynar API
+### Profile Display
+
+- Fetches FarCaster profile via Neynar API
 - Shows avatar, username, and display name
-- Displays FID (Farcaster ID)
+- Displays FID (FarCaster ID)
 
-**Minting**
+### Minting
+
 - Shows mint price and network
 - Handles contract interaction via wagmi
 - Shows loading and error states
@@ -120,7 +213,7 @@ Also update `/public/.well-known/farcaster.json`:
 }
 ```
 
-### Add to Farcaster Frame Registry
+### Add to FarCaster Frame Registry
 
 1. Host the app on a domain
 2. Share Frame casts that link to `/api/frame?fid={fid}`
@@ -134,7 +227,7 @@ Returns Frame v2 HTML with image and button.
 
 ```
 Query Params:
-- fid (optional): Farcaster ID
+- fid (optional): FarCaster ID
 ```
 
 ### POST `/api/frame`
@@ -145,7 +238,7 @@ Processes Frame action (supports both GET/POST for flexibility).
 
 ### Change Mint Price
 
-Edit `/lib/wagmi.ts` and `/components/mini-app.tsx`:
+Edit `/components/mini-app.tsx`:
 ```typescript
 const MINT_PRICE = '0.002' // 0.002 ETH
 ```
@@ -190,9 +283,10 @@ docker run -p 3000:3000 \
 - **Next.js 16**: React framework
 - **Wagmi 2**: Web3 library
 - **Viem**: Ethereum utilities
-- **Neynar**: Farcaster API
+- **Neynar**: FarCaster API
 - **Tailwind CSS**: Styling
 - **shadcn/ui**: UI components
+- **@farcaster/miniapp-sdk**: FarCaster Mini App SDK
 
 ## Troubleshooting
 
@@ -201,6 +295,7 @@ docker run -p 3000:3000 \
 - Ensure WalletConnect Project ID is correct
 - Check that wallet supports Base mainnet
 - Try injected wallet (MetaMask, Coinbase Wallet)
+- If in FarCaster app, use the native wallet option
 
 ### Neynar API Errors
 
