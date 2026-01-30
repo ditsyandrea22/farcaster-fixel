@@ -30,9 +30,16 @@
     "tagline": "Mint your FID as pixel NFT",
 
     "primaryCategory": "art-creativity",
-    "tags": ["farcaster", "nft", "pixel", "fid", "base"],
 
-    "splashImageUrl": "https://farcaster-fixel.vercel.app/splash.svg",
+    "tags": [
+      "farcaster",
+      "fid",
+      "pixel-nft",
+      "nft",
+      "base"
+    ],
+
+    "splashImageUrl": "https://farcaster-fixel.vercel.app/splash.png",
     "splashBackgroundColor": "#0F172A",
 
     "heroImageUrl": "https://farcaster-fixel.vercel.app/hero.png",
