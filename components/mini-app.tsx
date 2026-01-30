@@ -59,7 +59,7 @@ export function MiniApp() {
   const isWrongNetwork = isConnected && chainId && chainId !== BASE_CHAIN_ID
   
   // Check if Base chain is supported by the mini app
-  const isBaseSupported = capabilities?.supportedChains.some(chain => chain.id === BASE_CHAIN_ID) ?? true
+  const isBaseSupported = capabilities?.supportedChains?.some?.((chain: { id: number }) => chain.id === BASE_CHAIN_ID) ?? true
 
   // Set FID from user context (new SDK)
   useEffect(() => {
