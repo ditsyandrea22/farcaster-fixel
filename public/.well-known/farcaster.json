@@ -1,0 +1,22 @@
+{
+  "version": "1",
+  "name": "Fixel FID – Pixel NFT Minting",
+  "icon": "https://your-domain.xyz/mint-card-bg.svg",
+  "description": "Mint unique pixel NFTs on Base Mainnet. Connect your wallet, auto-detect your Farcaster identity, and generate deterministic pixel art NFTs.",
+  "homeUrl": "https://your-domain.xyz",
+  "splashImage": "https://your-domain.xyz/api/nft-image?fid=1&username=Fixel",
+  "splashImageAspectRatio": "1:1",
+  "buttons": [
+    {
+      "title": "Mint NFT",
+      "target": "https://your-domain.xyz/mint"
+    }
+  ],
+  "ogImage": "https://your-domain.xyz/api/nft-image?fid=1&username=Fixel",
+  "ogTitle": "Fixel FID – Generate & Mint Pixel NFTs on Base",
+  "ogDescription": "Deterministic pixel art NFTs generated from your Farcaster identity. Mint on Base Mainnet.",
+  "category": "Art",
+  "website": "https://your-domain.xyz",
+  "terms": "https://your-domain.xyz/terms",
+  "privacy": "https://your-domain.xyz/privacy"
+}
