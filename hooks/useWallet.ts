@@ -1,7 +1,7 @@
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { useFarcasterWallet } from '@/lib/farcaster-sdk'
 import { base } from 'wagmi/chains'
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 
 /**
  * Custom hook for wallet connection following FarCast Mini App guidelines.
@@ -51,6 +51,7 @@ export function useWallet() {
   const { 
     isConnected: isFarcasterWalletConnected,
     address: farcasterWalletAddress,
+    chainId: farcasterChainId,
     isConnecting: isConnectingFarcasterWallet,
     error: farcasterWalletError,
     connect: connectFarcasterWallet,
@@ -83,6 +84,20 @@ export function useWallet() {
       }
     }
   }, [connect, connectors])
+
+  // Auto-switch to Base network after external wallet connection
+  useEffect(() => {
+    if (isConnected && chainId && chainId !== base.id && isBaseSupported) {
+      switchChain({ chainId: base.id })
+    }
+  }, [isConnected, chainId, isBaseSupported, switchChain])
+
+  // Auto-switch to Base network after FarCast wallet connection
+  useEffect(() => {
+    if (isFarcasterWalletConnected && farcasterChainId && farcasterChainId !== base.id) {
+      switchChainFarcaster(base.id)
+    }
+  }, [isFarcasterWalletConnected, farcasterChainId, switchChainFarcaster])
 
   /**
    * Connect using FarCast mini-app wallet
@@ -153,6 +168,7 @@ export function useWallet() {
     // FarCast specific
     isFarcasterWalletConnected,
     farcasterWalletAddress,
+    farcasterChainId,
     sendTransaction,
     farcasterWalletError,
     
