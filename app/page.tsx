@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Head from "next/head";
 import { sdk } from "@farcaster/miniapp-sdk";
 
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,11 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-terminal-dark">
+    <>
+      <Head>
+        <meta name="base:app_id" content="6989f2196dea3c7b8e14a0d9" />
+      </Head>
+      <div className="min-h-screen bg-terminal-dark">
       {/* Terminal-style Navigation */}
       <nav className="sticky top-0 z-50 backdrop-blur-sm border-b border-border/50 bg-terminal-dark/95">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">

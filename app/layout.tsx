@@ -29,6 +29,7 @@ export const metadata: Metadata = {
   },
 
   other: {
+    'base:app_id': '6989f2196dea3c7b8e14a0d9',
     'fc:frame': 'v2',
     'fc:frame:image': 'https://farcaster-fixel.vercel.app/mint-card-bg.png',
     'fc:frame:button:1': 'Open Mini App',
