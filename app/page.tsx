@@ -192,10 +192,10 @@ export default function Home() {
             </p>
             <div className="terminal-box p-4 font-mono text-sm">
               <p className="text-muted-foreground mb-2">$ cat architecture.txt</p>
-              <p className="text-primary">│ FarCaster MiniApp SDK</p>
-              <p className="text-primary">│ Base Mainnet</p>
-              <p className="text-primary">│ Neynar API</p>
-              <p className="text-primary">└ wagmi/v2</p>
+              <p className="text-primary">| FarCaster MiniApp SDK</p>
+              <p className="text-primary">| Base Mainnet</p>
+              <p className="text-primary">| Neynar API</p>
+              <p className="text-primary">| wagmi/v2</p>
             </div>
           </div>
 
