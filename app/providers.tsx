@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WagmiProvider } from 'wagmi'
 import { getWagmiConfig } from '@/lib/wagmi'
+import type { Config } from 'wagmi'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -15,7 +16,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     },
   }))
 
-  const [config, setConfig] = useState<ReturnType<typeof getWagmiConfig> | null>(null)
+  const [config, setConfig] = useState<Config | null>(null)
 
   useEffect(() => {
     getWagmiConfig().then(setConfig).catch(console.error)

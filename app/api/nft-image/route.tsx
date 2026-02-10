@@ -1,189 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ImageResponse } from 'next/og'
 import { getRateLimitResult, defaultConfig } from '@/lib/rate-limit'
+import {
+  RARITY_TIERS,
+  type RarityTier,
+  MAX_SUPPLY,
+  hashFid,
+  hashAddress,
+  generateRandomSeed,
+  determineRarity,
+  generatePixelPattern,
+  generateColors,
+  getTierProperties,
+  generateSerialNumber,
+} from '@/lib/rarity'
 
 export const runtime = 'nodejs'
-
-// Get base URL from environment or use a default for server-side generation
-const getBaseUrl = () => {
-  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL
-  }
-  return 'https://farcaster-fixel.vercel.app' // Fallback production URL
-}
-
-// Rarity tiers with distribution rates
-const RARITY_TIERS = {
-  COMMON: { name: 'COMMON', rate: 80, color: '#6B7280' },
-  UNCOMMON: { name: 'UNCOMMON', rate: 15, color: '#10B981' },
-  SILVER: { name: 'SILVER', rate: 4, color: '#94A3B8' },
-  GOLD: { name: 'GOLD', rate: 0.99, color: '#F59E0B' },
-  PLATINUM: { name: 'PLATINUM', rate: 0.01, color: '#E5E7EB' },
-} as const
-
-export type RarityTier = keyof typeof RARITY_TIERS
-export const MAX_SUPPLY = 20000
-
-// Cryptographically secure random number generator (0-1)
-function cryptoRandom(): number {
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const array = new Uint32Array(1)
-    crypto.getRandomValues(array)
-    return array[0] / (0xFFFFFFFF + 1)
-  }
-  // Fallback for Node.js
-  return Math.random()
-}
-
-// Generate truly random seed using Web Crypto API
-function generateRandomSeed(): number {
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    const array = new BigUint64Array(1)
-    crypto.getRandomValues(array as unknown as Uint8Array)
-    return Number(array[0] % BigInt(1000000))
-  }
-  return Math.floor(Math.random() * 1000000)
-}
-
-// Mulberry32 - high quality PRNG for better distribution
-function mulberry32(seed: number): () => number {
-  return function() {
-    let t = seed += 0x6D2B79F5
-    t = Math.imul(t ^ t >>> 15, t | 1)
-    t ^= t + Math.imul(t ^ t >>> 7, t | 61)
-    return ((t ^ t >>> 14) >>> 0) / 4294967296
-  }
-}
-
-// Seeded random number generator for deterministic results
-function seededRandom(seed: number): number {
-  const x = Math.sin(seed) * 10000
-  return x - Math.floor(x)
-}
-
-// Hash FID to number for seeding
-function hashFid(fid: string): number {
-  return parseInt(fid, 10) || 0
-}
-
-// Hash wallet address to number for seeding
-function hashAddress(address: string): number {
-  let hash = 0
-  for (let i = 0; i < address.length; i++) {
-    const char = address.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
-  }
-  return Math.abs(hash)
-}
-
-// Determine rarity based on seeded random using Mulberry32 for better distribution
-function determineRarity(seed: number): RarityTier {
-  // Use Mulberry32 for better random distribution
-  const random = mulberry32(seed)()
-  const rand = random * 100
-  
-  let cumulative = 0
-  const rates = [
-    { tier: 'COMMON' as RarityTier, rate: RARITY_TIERS.COMMON.rate },
-    { tier: 'UNCOMMON' as RarityTier, rate: RARITY_TIERS.UNCOMMON.rate },
-    { tier: 'SILVER' as RarityTier, rate: RARITY_TIERS.SILVER.rate },
-    { tier: 'GOLD' as RarityTier, rate: RARITY_TIERS.GOLD.rate },
-    { tier: 'PLATINUM' as RarityTier, rate: RARITY_TIERS.PLATINUM.rate },
-  ]
-  
-  for (const { tier, rate } of rates) {
-    cumulative += rate
-    if (rand <= cumulative) {
-      return tier
-    }
-  }
-  return 'COMMON'
-}
-
-// Generate unique pattern based on seed and rarity
-function generatePixelPattern(seed: number, rarity: RarityTier): boolean[][] {
-  const gridSize = rarity === 'PLATINUM' ? 16 : rarity === 'GOLD' ? 14 : 12
-  const pattern: boolean[][] = Array(gridSize)
-    .fill(null)
-    .map(() => Array(gridSize).fill(false))
-  
-  // Use Mulberry32 for better pattern distribution
-  const random = mulberry32(seed)
-  
-  // Adjust density based on rarity
-  const densityMultiplier = rarity === 'PLATINUM' ? 1.5 : rarity === 'GOLD' ? 1.3 : rarity === 'SILVER' ? 1.2 : 1
-  
-  for (let i = 0; i < gridSize; i++) {
-    for (let j = 0; j < gridSize; j++) {
-      const hash = (seed * (i + 1) * (j + 1) * 73856093) ^ ((seed >> 16) * 19349663)
-      const threshold = 0.5 / densityMultiplier
-      pattern[i][j] = (hash & 1) === 1 && random() > threshold
-    }
-  }
-  
-  return pattern
-}
-
-// Generate colors based on seed and rarity
-function generateColors(seed: number, rarity: RarityTier): { primary: string; secondary: string; accent: string; bgGradient: string } {
-  
-  // Use Mulberry32 for better color distribution
-  const random = mulberry32(seed)
-  
-  // Adjust saturation and lightness based on rarity
-  const rarityBoost = rarity === 'PLATINUM' ? 40 : rarity === 'GOLD' ? 30 : rarity === 'SILVER' ? 20 : 0
-  
-  const hue1 = (seed * 137.5) % 360
-  const hue2 = (hue1 + 180) % 360
-  const sat = 60 + ((seed % 20) * 2) + rarityBoost
-  const light = 55 + (rarityBoost / 2)
-  
-  // Special colors for higher rarities
-  if (rarity === 'PLATINUM') {
-    return {
-      primary: 'linear-gradient(135deg, #E5E7EB, #9CA3AF)',
-      secondary: 'linear-gradient(135deg, #D1D5DB, #6B7280)',
-      accent: '#FFFFFF',
-      bgGradient: 'linear-gradient(135deg, #F9FAFB 0%, #E5E7EB 50%, #D1D5DB 100%)',
-    }
-  }
-  
-  if (rarity === 'GOLD') {
-    return {
-      primary: `linear-gradient(135deg, #F59E0B, #D97706)`,
-      secondary: `linear-gradient(135deg, #FCD34D, #F59E0B)`,
-      accent: '#FEF3C7',
-      bgGradient: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 50%, #FDE68A 100%)',
-    }
-  }
-  
-  return {
-    primary: `hsl(${hue1}, ${sat}%, ${light}%)`,
-    secondary: `hsl(${hue2}, ${sat}%, ${light - 10}%)`,
-    accent: `hsl(${(hue1 + 60) % 360}, ${Math.min(sat + 20, 100)}%, ${Math.min(light + 15, 80)}%)`,
-    bgGradient: `linear-gradient(135deg, hsl(${hue1}, ${sat}%, 98%) 0%, hsl(${hue2}, ${sat}%, 96%) 100%)`,
-  }
-}
-
-// Get tier display properties
-function getTierProperties(rarity: RarityTier) {
-  const tier = RARITY_TIERS[rarity]
-  return {
-    name: tier.name,
-    color: tier.color,
-    glowIntensity: rarity === 'PLATINUM' ? 0.8 : rarity === 'GOLD' ? 0.6 : rarity === 'SILVER' ? 0.4 : 0.2,
-    borderWidth: rarity === 'PLATINUM' ? 4 : rarity === 'GOLD' ? 3 : rarity === 'SILVER' ? 2 : 1,
-    hasSparkles: rarity === 'PLATINUM' || rarity === 'GOLD' || rarity === 'SILVER',
-    hasHalo: rarity === 'PLATINUM',
-  }
-}
-
-// Generate NFT serial number based on seed
-function generateSerialNumber(seed: number): string {
-  const num = (seed % MAX_SUPPLY) + 1
-  return `#${num.toString().padStart(5, '0')}/${MAX_SUPPLY}`
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -192,7 +24,7 @@ export async function GET(request: NextRequest) {
                request.headers.get('x-real-ip') || 
                'unknown'
     
-    const rateLimit = getRateLimitResult(ip)
+    const rateLimit = await getRateLimitResult(ip)
     
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -365,8 +197,9 @@ export async function GET(request: NextRequest) {
             {/* Pixel Art Grid */}
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(${gridSize}, ${pixelSize}px)`,
+                display: 'flex',
+                flexWrap: 'wrap',
+                width: `${gridSize * pixelSize + (gridSize - 1) * 2}px`,
                 gap: '2px',
                 padding: '24px',
                 background: 'white',

@@ -1,5 +1,6 @@
 // Neynar utilities - kept for compatibility but no longer required for NFT generation
 // NFT generation now uses wallet address directly
+// Rarity logic has been centralized in lib/rarity.ts
 
 export interface UserProfile {
   fid: number
@@ -68,47 +69,22 @@ export async function getFidFromAddress(address: string): Promise<FidLookupResul
   }
 }
 
-// NFT generation now uses wallet address directly - this function kept for compatibility
+// Re-export rarity utilities from centralized module
+// All rarity logic has been moved to lib/rarity.ts
+export {
+  type RarityTier,
+  RARITY_TIERS,
+  RARITY_DISTRIBUTION,
+  MAX_SUPPLY,
+  determineRarity,
+  determineRarityFromFid,
+  determineRarityFromAddress,
+  hashFid,
+  hashAddress,
+  generateRandomSeed,
+} from '@/lib/rarity'
+
+// NFT generation URL helper - kept for compatibility
 export function generateNftImageUrl(address: string, walletShort?: string): string {
   return `/api/nft-image?address=${address}&wallet=${encodeURIComponent(walletShort || '')}`
 }
-
-// Rarity tier determination - available for client-side use
-export type RarityTier = 'COMMON' | 'UNCOMMON' | 'SILVER' | 'GOLD' | 'PLATINUM'
-
-export function determineRarity(address: string): RarityTier {
-  let hash = 0
-  for (let i = 0; i < address.length; i++) {
-    const char = address.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
-  }
-  const rand = (Math.abs(hash) % 10000) / 100 // 0-100 scale
-  
-  let cumulative = 0
-  const rates = [
-    { tier: 'COMMON' as RarityTier, rate: 80 },
-    { tier: 'UNCOMMON' as RarityTier, rate: 15 },
-    { tier: 'SILVER' as RarityTier, rate: 4 },
-    { tier: 'GOLD' as RarityTier, rate: 0.99 },
-    { tier: 'PLATINUM' as RarityTier, rate: 0.01 },
-  ]
-  
-  for (const { tier, rate } of rates) {
-    cumulative += rate
-    if (rand <= cumulative) {
-      return tier
-    }
-  }
-  return 'COMMON'
-}
-
-export const RARITY_CONFIG = {
-  COMMON: { name: 'COMMON', rate: 80, color: '#6B7280' },
-  UNCOMMON: { name: 'UNCOMMON', rate: 15, color: '#10B981' },
-  SILVER: { name: 'SILVER', rate: 4, color: '#94A3B8' },
-  GOLD: { name: 'GOLD', rate: 0.99, color: '#F59E0B' },
-  PLATINUM: { name: 'PLATINUM', rate: 0.01, color: '#E5E7EB' },
-} as const
-
-export const MAX_SUPPLY = 20000

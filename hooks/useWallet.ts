@@ -89,7 +89,7 @@ export function useWallet() {
   const isWrongNetwork = isConnected && chainId && chainId !== base.id
 
   // Check if Base chain is supported
-  const isBaseSupported = chain?.unsupported !== true
+  const isBaseSupported = !!chain && !('unsupported' in chain && chain.unsupported)
 
   // Gas estimation state
   const [gasEstimate, setGasEstimate] = useState<bigint | null>(null)
@@ -176,18 +176,24 @@ export function useWallet() {
       
       // Use wagmi's writeContract with explicit gas limit
       // This bypasses the wallet's gas estimation by providing a pre-calculated gas limit
-      const result = await wagmiWriteContract({
+      const contractParams = {
         address: params.address,
         abi: params.abi,
         functionName: params.functionName,
         args: params.args,
-        value: params.value,
         gas: NFT_MINT_GAS_LIMIT,
-      })
+      }
+      
+      if (params.value !== undefined) {
+        ;(contractParams as { value?: bigint }).value = params.value
+      }
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const hash = await wagmiWriteContract(contractParams as any) as `0x${string}` | undefined
       
       setGasEstimate(NFT_MINT_GAS_LIMIT)
       setIsEstimatingGas(false)
-      return result
+      return hash
     } catch (error) {
       setIsEstimatingGas(false)
       const errorMessage = error instanceof Error ? error.message : 'Contract write failed'

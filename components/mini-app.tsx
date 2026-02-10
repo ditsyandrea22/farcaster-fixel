@@ -16,51 +16,22 @@ import useWallet from '@/hooks/useWallet'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, Star, Crown, Gem, ArrowLeft } from 'lucide-react'
+import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, ArrowLeft } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
+import {
+  RARITY_TIERS,
+  type RarityTier,
+  determineRarityFromAddress,
+  getTierProperties,
+  getFortuneMessage,
+} from '@/lib/rarity'
 
-const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x955e339e27d2689b95BfB25C5e2Bce2223321cAA'
-const MINT_PRICE = '0.0001' // ETH ($0.3 at $3000/ETH)
+// Constants
+export const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x955e339e27d2689b95BfB25C5e2Bce2223321cAA'
+export const MINT_PRICE = '0.0001' // ETH ($0.3 at $3000/ETH)
 const BASE_CHAIN_ID = base.id
 
-// Rarity tiers
-const RARITY_TIERS = {
-  COMMON: { name: 'COMMON', rate: 80, color: '#6B7280', icon: null },
-  UNCOMMON: { name: 'UNCOMMON', rate: 15, color: '#10B981', icon: null },
-  SILVER: { name: 'SILVER', rate: 4, color: '#94A3B8', icon: Star },
-  GOLD: { name: 'GOLD', rate: 0.99, color: '#F59E0B', icon: Crown },
-  PLATINUM: { name: 'PLATINUM', rate: 0.01, color: '#E5E7EB', icon: Gem },
-} as const
-
-type RarityTier = keyof typeof RARITY_TIERS
-
-// Determine rarity based on wallet address (deterministic)
-function determineRarity(address: string): RarityTier {
-  let hash = 0
-  for (let i = 0; i < address.length; i++) {
-    const char = address.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
-  }
-  const rand = (Math.abs(hash) % 10000) / 100 // 0-100 scale
-  
-  let cumulative = 0
-  const rates = [
-    { tier: 'COMMON' as RarityTier, rate: 80 },
-    { tier: 'UNCOMMON' as RarityTier, rate: 15 },
-    { tier: 'SILVER' as RarityTier, rate: 4 },
-    { tier: 'GOLD' as RarityTier, rate: 0.99 },
-    { tier: 'PLATINUM' as RarityTier, rate: 0.01 },
-  ]
-  
-  for (const { tier, rate } of rates) {
-    cumulative += rate
-    if (rand <= cumulative) {
-      return tier
-    }
-  }
-  return 'COMMON'
-}
+// Get RarityIcon helper - icons are rendered differently in React components
 
 export function MiniApp() {
   // SDK State
@@ -296,10 +267,10 @@ export function MiniApp() {
     return Math.abs(hash) % 20000 + 1
   }
 
-  const getRarityIcon = (tier: RarityTier) => {
-    const Icon = RARITY_TIERS[tier].icon
-    if (!Icon) return null
-    return <Icon size={20} />
+  const getRarityIcon = (_tier: RarityTier) => {
+    // Icons are not directly usable from RARITY_TIERS since they are stored as strings
+    // Return null - icons can be added separately if needed
+    return null
   }
 
   // Get effective FID - use SDK FID or derive from wallet address
@@ -379,7 +350,7 @@ export function MiniApp() {
     }
 
     // Determine rarity based on wallet address
-    const walletRarity = determineRarity(walletAddress)
+    const walletRarity = determineRarityFromAddress(walletAddress)
     setRarity(walletRarity)
     setRevealedRarity(walletRarity)
     setFortuneMessage(getFortuneMessage(walletRarity))

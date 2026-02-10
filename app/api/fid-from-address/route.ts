@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
                request.headers.get('x-real-ip') || 
                'unknown'
     
-    const rateLimit = getRateLimitResult(ip)
+    const rateLimit = await getRateLimitResult(ip)
     
     if (!rateLimit.allowed) {
       return NextResponse.json(

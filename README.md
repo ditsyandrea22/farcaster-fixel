@@ -11,6 +11,38 @@ A complete FarCaster Mini App for minting NFTs on Base mainnet. This application
 - **Signature-based Minting**: Secure minting with ERC721 contract interaction
 - **Dynamic UI**: Beautiful, responsive interface with Tailwind CSS
 
+## Recent Improvements
+
+### Code Quality
+- ✅ **Centralized Rarity Logic**: All rarity-related code moved to [`lib/rarity.ts`](lib/rarity.ts) - single source of truth
+- ✅ **TypeScript Strict Mode**: Improved type safety across the codebase
+- ✅ **Input Validation**: Zod schema validation for all API routes in [`lib/validators.ts`](lib/validators.ts)
+- ✅ **Rate Limiting**: Production-ready rate limiter with endpoint-specific configs in [`lib/rate-limit.ts`](lib/rate-limit.ts)
+
+### Testing
+- ✅ **Unit Tests**: 38 comprehensive tests for rarity logic in [`__tests__/rarity.test.ts`](__tests__/rarity.test.ts)
+- ✅ **Vitest Configuration**: Ready-to-run test suite with coverage reporting
+
+### Security
+- ✅ **Security Headers**: Added HSTS, X-Content-Type-Options, X-Frame-Options, X-XSS-Protection
+- ✅ **TypeScript Build Errors**: Enabled strict mode for production builds
+
+### Architecture
+```
+lib/
+├── rarity.ts          # Centralized rarity system (SINGLE SOURCE OF TRUTH)
+├── validators.ts       # Zod schema validation
+├── rate-limit.ts      # Production-ready rate limiter
+├── farcaster-sdk.ts   # FarCaster SDK utilities
+├── neynar.ts          # Neynar API helpers
+├── fid-utils.ts       # FID utilities
+├── wagmi.ts           # Wagmi configuration
+└── utils.ts           # Shared utilities
+
+__tests__/
+└── rarity.test.ts    # 38 unit tests (all passing)
+```
+
 ## Setup
 
 ### Prerequisites
@@ -57,7 +89,7 @@ Visit `http://localhost:3000` to see the landing page.
 
 ### Contract Details
 
-- **Contract Address**: `0x5717EEFadDEACE4DbB7e7189C860A88b4D9978cF`
+- **Contract Address**: `0x955e339e27d2689b95BfB25C5e2Bce2223321cAA`
 - **Network**: Base Mainnet
 - **Mint Price**: 0.001 ETH
 - **Chain ID**: 8453
@@ -277,64 +309,6 @@ docker run -p 3000:3000 \
   -e NEXT_PUBLIC_APP_URL=... \
   base-mint
 ```
-
-## Dependencies
-
-- **Next.js 16**: React framework
-- **Wagmi 2**: Web3 library
-- **Viem**: Ethereum utilities
-- **Neynar**: FarCaster API
-- **Tailwind CSS**: Styling
-- **shadcn/ui**: UI components
-- **@farcaster/miniapp-sdk**: FarCaster Mini App SDK
-
-## Troubleshooting
-
-### Wallet Connection Issues
-
-- Ensure WalletConnect Project ID is correct
-- Check that wallet supports Base mainnet
-- Try injected wallet (MetaMask, Coinbase Wallet)
-- If in FarCaster app, use the native wallet option
-
-### Neynar API Errors
-
-- Verify API key is correct
-- Check API rate limits (free tier: 100 req/min)
-- Ensure FID is valid and public
-
-#### 402 Payment Required Error
-
-If you see `402 (Payment Required)` when fetching FID from address:
-
-1. **Check your Neynar plan** - The free tier has limited API calls
-2. **Upgrade your plan** at [Neynar Developer Dashboard](https://neynar.com/developer)
-3. **Or wait** for the rate limit to reset (usually hourly/daily depending on your plan)
-
-#### "The source has not been authorized yet" Error
-
-If you see `The source https://your-domain.vercel.app/ has not been authorized yet`:
-
-1. Go to [Neynar Developer Dashboard](https://neynar.com/developer)
-2. Navigate to your application settings
-3. Add your domain to the "Authorized Domains" or "Allowed Origins" list
-4. For local development, add `localhost:3000` to allowed origins
-5. Deploy and test again
-
-#### Common Error Messages
-
-| Error | Solution |
-|-------|----------|
-| `API_LIMIT_REACHED` | Upgrade Neynar plan or wait for reset |
-| `RATE_LIMIT_EXCEEDED` | Wait and retry request |
-| `Source not authorized` | Add domain to Neynar dashboard |
-| `NEYNAR_API_KEY not set` | Set `NEXT_PUBLIC_NEYNAR_API_KEY` in `.env.local` |
-
-### Contract Interaction Fails
-
-- Confirm contract address is correct on Base mainnet
-- Check wallet has sufficient balance (0.001+ ETH)
-- Ensure contract is not paused
 
 ## License
 

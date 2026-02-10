@@ -8,6 +8,8 @@
  * - Sliding window algorithm for more accurate limiting
  */
 
+import { getRateLimitResult as inMemoryRateLimit } from './rate-limit-simple'
+
 // ============================================================================
 // Configuration
 // ============================================================================
@@ -55,58 +57,8 @@ export interface RateLimitResultWithHeaders extends RateLimitResult {
 export { defaultConfig, strictConfig, generousConfig }
 
 // ============================================================================
-// Rate Limiting Implementation (In-Memory Fallback)
+// Rate Limiting Implementation
 // ============================================================================
-
-// In-memory store (note: this will reset on server restart in development)
-// For production, consider using Redis with upstash/ratelimit
-const ipCache = new Map<string, { count: number; resetTime: number }>()
-
-/**
- * In-memory rate limiter implementation
- */
-function getInMemoryRateLimit(
-  ip: string,
-  config: RateLimitConfig = defaultConfig
-): RateLimitResult {
-  const now = Date.now()
-  const existing = ipCache.get(ip)
-
-  if (!existing || now > existing.resetTime) {
-    // New request or expired window
-    ipCache.set(ip, {
-      count: 1,
-      resetTime: now + config.windowMs,
-    })
-    return {
-      allowed: true,
-      remaining: config.maxRequests - 1,
-      resetTime: now + config.windowMs,
-      limit: config.maxRequests,
-      windowMs: config.windowMs,
-    }
-  }
-
-  if (existing.count >= config.maxRequests) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetTime: existing.resetTime,
-      limit: config.maxRequests,
-      windowMs: config.windowMs,
-    }
-  }
-
-  // Increment count
-  existing.count++
-  return {
-    allowed: true,
-    remaining: config.maxRequests - existing.count,
-    resetTime: existing.resetTime,
-    limit: config.maxRequests,
-    windowMs: config.windowMs,
-  }
-}
 
 /**
  * Get rate limit result for an IP address
@@ -117,19 +69,16 @@ export async function getRateLimitResult(
   config: RateLimitConfig = defaultConfig
 ): Promise<RateLimitResult> {
   // For production, this would integrate with Redis
-  // Example Redis integration:
-  // import { Ratelimit } from "@upstash/ratelimit"
-  // import { Redis } from "@upstash/redis"
-  // 
-  // const ratelimit = new Ratelimit({
-  //   redis: Redis.fromEnv(),
-  //   limiter: Ratelimit.slidingWindow(config.maxRequests, `${config.windowMs}ms`),
-  // })
-  // 
-  // const result = await ratelimit.limit(ip)
-  // return { allowed: !result.success, remaining: result.limit - result.usage, ... }
-
-  return getInMemoryRateLimit(ip, config)
+  // For now, use in-memory implementation
+  const result = inMemoryRateLimit(ip, config)
+  
+  return {
+    allowed: (await result).allowed,
+    remaining: (await result).remaining,
+    resetTime: (await result).resetTime,
+    limit: config.maxRequests,
+    windowMs: config.windowMs,
+  }
 }
 
 /**
@@ -202,18 +151,6 @@ export function createRateLimitExceededResponse(
   })
 }
 
-/**
- * Cleanup old entries periodically
- */
-export function cleanupExpiredEntries(): void {
-  const now = Date.now()
-  for (const [ip, data] of ipCache.entries()) {
-    if (now > data.resetTime) {
-      ipCache.delete(ip)
-    }
-  }
-}
-
 // ============================================================================
 // Endpoint-Specific Configurations
 // ============================================================================
@@ -221,7 +158,7 @@ export function cleanupExpiredEntries(): void {
 /**
  * Rate limit configs for different endpoints
  */
-export const ENDPOINT_CONFIGS: Record<string, RateLimitConfig> = {
+export const ENDPOINT_CONFIGS = {
   // Public endpoints - more generous limits
   '/api/nft-image': generousConfig,
   '/api/nft-metadata': generousConfig,
@@ -232,7 +169,7 @@ export const ENDPOINT_CONFIGS: Record<string, RateLimitConfig> = {
   '/api/fid-from-address': strictConfig,
   
   // Default - standard limits
-  '/api': defaultConfig,
+  default: defaultConfig,
 }
 
 /**
@@ -240,8 +177,8 @@ export const ENDPOINT_CONFIGS: Record<string, RateLimitConfig> = {
  */
 export function getConfigForEndpoint(endpoint: string): RateLimitConfig {
   // Check exact match first
-  if (ENDPOINT_CONFIGS[endpoint]) {
-    return ENDPOINT_CONFIGS[endpoint]
+  if (ENDPOINT_CONFIGS[endpoint as keyof typeof ENDPOINT_CONFIGS]) {
+    return ENDPOINT_CONFIGS[endpoint as keyof typeof ENDPOINT_CONFIGS]
   }
   
   // Check if endpoint starts with a known path
