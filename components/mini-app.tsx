@@ -269,7 +269,7 @@ export function MiniApp() {
     return tierMessages[Math.floor(Math.random() * tierMessages.length)]
   }
 
-  // Generate NFT based on luck (hoki) - then directly mint
+// Generate NFT based on luck (hoki) - then directly mint
   const handleGenerate = async () => {
     setIsGenerating(true)
     setError(null)
@@ -314,21 +314,56 @@ export function MiniApp() {
       })
       
       console.log('✅ Transaction submitted:', hash)
-      setTxHash(hash)
-      // isGenerating stays true until isConfirmed
+      setTxHash(hash || null)
+      // isGenerating stays true until isConfirmed or error
     } catch (err) {
       console.error('❌ Mint failed:', err)
-      setError(err instanceof Error ? err.message : 'Mint failed - Please check your wallet')
+      const errorMessage = err instanceof Error ? err.message : 'Mint failed - Please check your wallet'
+      
+      // Handle specific error cases
+      if (errorMessage.includes('User rejected') || errorMessage.includes('rejected the request') || errorMessage.includes('cancelled')) {
+        setError('Transaction was cancelled. Click "Reveal My NFT!" to try again.')
+      } else if (errorMessage.includes('insufficient funds') || errorMessage.includes('Insufficient')) {
+        setError('Insufficient funds. Please add ETH to your wallet.')
+      } else if (errorMessage.includes('nonce')) {
+        setError('Transaction nonce error. Please try again.')
+      } else {
+        setError(errorMessage)
+      }
+      
       setIsGenerating(false)
+      setIsGenerated(true) // Show the NFT preview even if mint failed
     }
   }
 
-  // Reset isGenerating when transaction completes
+  // Safety timeout to prevent infinite spinner
   useEffect(() => {
-    if (isConfirmed || isTxError) {
+    // If we're generating but no txHash after 60 seconds, something went wrong
+    const timeoutId = setTimeout(() => {
+      if (isGenerating && !txHash) {
+        console.log('⚠️ Timeout: No transaction hash received, resetting state...')
+        setIsGenerating(false)
+        setError('Transaction timed out. Please try again.')
+      }
+    }, 60000) // 60 seconds timeout
+
+    return () => clearTimeout(timeoutId)
+  }, [isGenerating, txHash])
+
+  // Reset isGenerating when transaction completes or fails
+  useEffect(() => {
+    if (isConfirmed) {
       setIsGenerating(false)
     }
-  }, [isConfirmed, isTxError])
+  }, [isConfirmed])
+
+  // Also reset when txHash is set (transaction submitted)
+  useEffect(() => {
+    if (txHash) {
+      // Transaction was submitted, now waiting for confirmation
+      setIsGenerating(true)
+    }
+  }, [txHash])
 
   // Reset and try your luck again
   const handleRegenerate = () => {

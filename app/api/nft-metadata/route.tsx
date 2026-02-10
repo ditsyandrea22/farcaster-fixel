@@ -3,7 +3,7 @@ import { getRateLimitResult, defaultConfig } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://farcaster-fixel.vercel.app'
 
 // Rarity tiers (must match nft-image/route.tsx)
 const RARITY_TIERS = {

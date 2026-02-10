@@ -4,6 +4,14 @@ import { getRateLimitResult, defaultConfig } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
+// Get base URL from environment or use a default for server-side generation
+const getBaseUrl = () => {
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL
+  }
+  return 'https://farcaster-fixel.vercel.app' // Fallback production URL
+}
+
 // Rarity tiers with distribution rates
 const RARITY_TIERS = {
   COMMON: { name: 'COMMON', rate: 80, color: '#6B7280' },

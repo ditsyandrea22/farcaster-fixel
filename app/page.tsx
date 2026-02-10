@@ -13,9 +13,31 @@ import {
   Terminal,
   Terminal as TerminalIcon,
   Cpu,
+  Star,
+  Crown,
+  Gem,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import styles from "@/styles/animations.module.css";
+
+// Sample NFT data for preview gallery - each has a deterministic seed
+const SAMPLE_NFTS = [
+  { id: 1, seed: 12345, rarity: 'COMMON' as const, name: 'Pixel Pioneer' },
+  { id: 2, seed: 54321, rarity: 'UNCOMMON' as const, name: 'Crypto Explorer' },
+  { id: 3, seed: 11111, rarity: 'SILVER' as const, name: 'Silver Surfer' },
+  { id: 4, seed: 99999, rarity: 'GOLD' as const, name: 'Golden Goose' },
+  { id: 5, seed: 88888, rarity: 'PLATINUM' as const, name: 'Legendary Lucker' },
+]
+
+// Rarity configuration for display
+const RARITY_CONFIG = {
+  COMMON: { name: 'COMMON', color: '#6B7280', rate: '80%', icon: null },
+  UNCOMMON: { name: 'UNCOMMON', color: '#10B981', rate: '15%', icon: null },
+  SILVER: { name: 'SILVER', color: '#94A3B8', rate: '4%', icon: Star },
+  GOLD: { name: 'GOLD', color: '#F59E0B', rate: '0.99%', icon: Crown },
+  PLATINUM: { name: 'PLATINUM', color: '#E5E7EB', rate: '0.01%', icon: Gem },
+} as const
 
 export default function Home() {
   const [typedText, setTypedText] = useState("");
@@ -66,7 +88,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <TerminalIcon className="w-5 h-5 text-primary animate-pulse" />
             <h1 className="text-lg font-mono font-bold text-foreground tracking-tight">
-              <span className="text-primary">&gt;</span> Fixel FID
+              <span className="text-primary">></span> Fixel FID
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -162,7 +184,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-16 border-t items-center border-border">
           <div className="space-y-6">
             <h3 className="text-2xl font-mono font-bold text-foreground">
-              <span className="text-primary">&gt;</span> Built for FarCaster
+              <span className="text-primary">></span> Built for FarCaster
             </h3>
             <p className="text-muted-foreground font-mono">
               Seamlessly integrated with FarCaster Mini Apps & Frames.
@@ -170,10 +192,10 @@ export default function Home() {
             </p>
             <div className="terminal-box p-4 font-mono text-sm">
               <p className="text-muted-foreground mb-2">$ cat architecture.txt</p>
-              <p className="text-primary">&boxvr; FarCaster MiniApp SDK</p>
-              <p className="text-primary">&boxvr; Base Mainnet</p>
-              <p className="text-primary">&boxvr; Neynar API</p>
-              <p className="text-primary">&boxdr; wagmi/v2</p>
+              <p className="text-primary">│ FarCaster MiniApp SDK</p>
+              <p className="text-primary">│ Base Mainnet</p>
+              <p className="text-primary">│ Neynar API</p>
+              <p className="text-primary">└ wagmi/v2</p>
             </div>
           </div>
 
@@ -196,13 +218,97 @@ export default function Home() {
         {/* CTA Section */}
         <div className={`py-16 border-t text-center space-y-6 border-border ${styles.slideUp}`}>
           <h3 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">&gt;</span> Ready to Mint?
+            <span className="text-primary">></span> Ready to Mint?
           </h3>
           <Link href="/mint">
             <Button className="bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold px-8 py-4 text-lg rounded-md border border-primary transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]">
               ./launch.sh --mint
             </Button>
           </Link>
+        </div>
+
+        {/* NFT Preview Gallery */}
+        <div className={`py-16 border-t border-border ${styles.slideUp}`}>
+          <div className="text-center mb-8">
+            <h3 className="text-2xl font-mono font-bold text-foreground mb-2">
+              <span className="text-primary">></span> Preview Your Destiny
+            </h3>
+            <p className="text-muted-foreground font-mono text-sm">
+              Sample NFTs with different rarities - your luck awaits!
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {SAMPLE_NFTS.map((nft) => {
+              const config = RARITY_CONFIG[nft.rarity as keyof typeof RARITY_CONFIG]
+              const Icon = config.icon
+              return (
+                <div
+                  key={nft.id}
+                  className="terminal-box p-4 hover:border-primary/50 transition-all duration-300 group"
+                >
+                  <div className="relative aspect-square mb-3 overflow-hidden rounded-lg">
+                    <img
+                      src={`/api/nft-image?tokenId=${nft.id}&random=true`}
+                      alt={nft.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.svg"
+                      }}
+                    />
+                    <div
+                      className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold font-mono"
+                      style={{
+                        backgroundColor: `${config.color}20`,
+                        border: `1px solid ${config.color}60`,
+                        color: config.color,
+                      }}
+                    >
+                      {config.name}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-mono font-semibold text-foreground truncate">
+                      {nft.name}
+                    </p>
+                    <p className="text-xs font-mono text-muted-foreground mt-1">
+                      Rate: {config.rate}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Rarity Distribution Info */}
+          <div className="mt-8 p-4 terminal-box max-w-2xl mx-auto">
+            <h4 className="text-sm font-mono font-bold text-foreground mb-3">
+              <span className="text-primary">></span> Rarity Distribution
+            </h4>
+            <div className="grid grid-cols-5 gap-2 text-xs font-mono">
+              {Object.entries(RARITY_CONFIG).map(([key, config]) => {
+                const Icon = config.icon
+                return (
+                  <div
+                    key={key}
+                    className="text-center p-2 rounded-lg"
+                    style={{
+                      backgroundColor: `${config.color}10`,
+                      border: `1px solid ${config.color}30`,
+                    }}
+                  >
+                    <div className="flex justify-center mb-1">
+                      {Icon ? <Icon size={14} style={{ color: config.color }} /> : <Trophy size={14} style={{ color: config.color }} />}
+                    </div>
+                    <p style={{ color: config.color }} className="font-bold">
+                      {config.name}
+                    </p>
+                    <p className="text-muted-foreground">{config.rate}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
       </main>
 
@@ -244,3 +350,4 @@ function Feature({
     </div>
   );
 }
+
