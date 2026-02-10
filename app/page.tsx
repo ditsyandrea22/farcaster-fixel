@@ -23,21 +23,21 @@ import styles from "@/styles/animations.module.css";
 
 // Sample NFT data for preview gallery - each has a deterministic seed
 const SAMPLE_NFTS = [
-  { id: 1, seed: 12345, rarity: 'COMMON' as const, name: 'Pixel Pioneer' },
-  { id: 2, seed: 54321, rarity: 'UNCOMMON' as const, name: 'Crypto Explorer' },
-  { id: 3, seed: 11111, rarity: 'SILVER' as const, name: 'Silver Surfer' },
-  { id: 4, seed: 99999, rarity: 'GOLD' as const, name: 'Golden Goose' },
-  { id: 5, seed: 88888, rarity: 'PLATINUM' as const, name: 'Legendary Lucker' },
-]
+  { id: 1, seed: 12345, rarity: "COMMON" as const, name: "Pixel Pioneer" },
+  { id: 2, seed: 54321, rarity: "UNCOMMON" as const, name: "Crypto Explorer" },
+  { id: 3, seed: 11111, rarity: "SILVER" as const, name: "Silver Surfer" },
+  { id: 4, seed: 99999, rarity: "GOLD" as const, name: "Golden Goose" },
+  { id: 5, seed: 88888, rarity: "PLATINUM" as const, name: "Legendary Lucker" },
+];
 
 // Rarity configuration for display
 const RARITY_CONFIG = {
-  COMMON: { name: 'COMMON', color: '#6B7280', rate: '80%', icon: null },
-  UNCOMMON: { name: 'UNCOMMON', color: '#10B981', rate: '15%', icon: null },
-  SILVER: { name: 'SILVER', color: '#94A3B8', rate: '4%', icon: Star },
-  GOLD: { name: 'GOLD', color: '#F59E0B', rate: '0.99%', icon: Crown },
-  PLATINUM: { name: 'PLATINUM', color: '#E5E7EB', rate: '0.01%', icon: Gem },
-} as const
+  COMMON: { name: "COMMON", color: "#6B7280", rate: "80%", icon: null },
+  UNCOMMON: { name: "UNCOMMON", color: "#10B981", rate: "15%", icon: null },
+  SILVER: { name: "SILVER", color: "#94A3B8", rate: "4%", icon: Star },
+  GOLD: { name: "GOLD", color: "#F59E0B", rate: "0.99%", icon: Crown },
+  PLATINUM: { name: "PLATINUM", color: "#E5E7EB", rate: "0.01%", icon: Gem },
+} as const;
 
 export default function Home() {
   const [typedText, setTypedText] = useState("");
@@ -88,7 +88,7 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <TerminalIcon className="w-5 h-5 text-primary animate-pulse" />
             <h1 className="text-lg font-mono font-bold text-foreground tracking-tight">
-              <span className="text-primary">></span> Fixel FID
+              <span className="text-primary">{'>'}</span> Fixel FID
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -162,19 +162,19 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 py-16 border-t border-border">
           <Feature
             icon={<Sparkles size={24} className="text-primary" />}
-            title="> Auto Generate"
+            title="{'>'} Auto Generate"
             desc="Unique pixel NFT designs generated instantly based on your FarCaster FID."
             command="--generate"
           />
           <Feature
             icon={<Lock size={24} className="text-primary" />}
-            title="> Verified Identity"
+            title="{'>'} Verified Identity"
             desc="Wallet auto-connects to FarCaster via Neynar API."
             command="--verify"
           />
           <Feature
             icon={<Zap size={24} className="text-primary" />}
-            title="> Instant Mint"
+            title="{'>'} Instant Mint"
             desc="One-click minting with elegant loading animations."
             command="--mint"
           />
@@ -184,7 +184,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-16 border-t items-center border-border">
           <div className="space-y-6">
             <h3 className="text-2xl font-mono font-bold text-foreground">
-              <span className="text-primary">></span> Built for FarCaster
+              <span className="text-primary">{'>'}</span> Built for FarCaster
             </h3>
             <p className="text-muted-foreground font-mono">
               Seamlessly integrated with FarCaster Mini Apps & Frames.
@@ -218,7 +218,7 @@ export default function Home() {
         {/* CTA Section */}
         <div className={`py-16 border-t text-center space-y-6 border-border ${styles.slideUp}`}>
           <h3 className="text-3xl font-mono font-bold text-foreground">
-            <span className="text-primary">></span> Ready to Mint?
+            <span className="text-primary">{'>'}</span> Ready to Mint?
           </h3>
           <Link href="/mint">
             <Button className="bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold px-8 py-4 text-lg rounded-md border border-primary transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]">
@@ -231,7 +231,7 @@ export default function Home() {
         <div className={`py-16 border-t border-border ${styles.slideUp}`}>
           <div className="text-center mb-8">
             <h3 className="text-2xl font-mono font-bold text-foreground mb-2">
-              <span className="text-primary">></span> Preview Your Destiny
+              <span className="text-primary">{'>'}</span> Preview Your Destiny
             </h3>
             <p className="text-muted-foreground font-mono text-sm">
               Sample NFTs with different rarities - your luck awaits!
@@ -240,8 +240,8 @@ export default function Home() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {SAMPLE_NFTS.map((nft) => {
-              const config = RARITY_CONFIG[nft.rarity as keyof typeof RARITY_CONFIG]
-              const Icon = config.icon
+              const config = RARITY_CONFIG[nft.rarity as keyof typeof RARITY_CONFIG];
+              const Icon = config.icon;
               return (
                 <div
                   key={nft.id}
@@ -253,7 +253,7 @@ export default function Home() {
                       alt={nft.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       onError={(e) => {
-                        e.currentTarget.src = "/placeholder.svg"
+                        e.currentTarget.src = "/placeholder.svg";
                       }}
                     />
                     <div
@@ -276,18 +276,18 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
 
           {/* Rarity Distribution Info */}
           <div className="mt-8 p-4 terminal-box max-w-2xl mx-auto">
             <h4 className="text-sm font-mono font-bold text-foreground mb-3">
-              <span className="text-primary">></span> Rarity Distribution
+              <span className="text-primary">{'>'}</span> Rarity Distribution
             </h4>
             <div className="grid grid-cols-5 gap-2 text-xs font-mono">
               {Object.entries(RARITY_CONFIG).map(([key, config]) => {
-                const Icon = config.icon
+                const Icon = config.icon;
                 return (
                   <div
                     key={key}
@@ -298,14 +298,18 @@ export default function Home() {
                     }}
                   >
                     <div className="flex justify-center mb-1">
-                      {Icon ? <Icon size={14} style={{ color: config.color }} /> : <Trophy size={14} style={{ color: config.color }} />}
+                      {Icon ? (
+                        <Icon size={14} style={{ color: config.color }} />
+                      ) : (
+                        <Trophy size={14} style={{ color: config.color }} />
+                      )}
                     </div>
                     <p style={{ color: config.color }} className="font-bold">
                       {config.name}
                     </p>
                     <p className="text-muted-foreground">{config.rate}</p>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -350,4 +354,3 @@ function Feature({
     </div>
   );
 }
-
