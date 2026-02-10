@@ -1,10 +1,9 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useWaitForTransactionReceipt } from 'wagmi'
 import { parseEther } from 'viem'
-import { config } from '@/lib/wagmi'
 import { base } from 'wagmi/chains'
+import { usePublicClient } from 'wagmi'
 import { NFT_ABI } from '@/lib/contractAbi'
 import { useInitializeSdk, 
   useMiniAppDetection, 
@@ -17,7 +16,7 @@ import useWallet from '@/hooks/useWallet'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, Star, Crown, Gem, Dice, ArrowLeft } from 'lucide-react'
+import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, Star, Crown, Gem, ArrowLeft } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
 
 const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x955e339e27d2689b95BfB25C5e2Bce2223321cAA'
@@ -87,6 +86,9 @@ export function MiniApp() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [fortuneMessage, setFortuneMessage] = useState<string>('')
   const [revealedRarity, setRevealedRarity] = useState<RarityTier | null>(null)
+  
+  // Public client untuk polling manual jika useWaitForTransactionReceipt gagal
+  const publicClient = usePublicClient()
 
   // Wallet State using our custom hook with gas estimation
   const { 
@@ -105,12 +107,80 @@ export function MiniApp() {
     disconnect,
   } = useWallet()
   
-  // Wait for transaction confirmation
-  const { isLoading: isConfirming, isSuccess: isConfirmed, isError: isTxError, error: confirmError } = 
-    useWaitForTransactionReceipt({ 
-      hash: txHash || undefined,
-      query: { enabled: !!txHash }
-    })
+  // Wait for transaction confirmation - gunakan polling manual sebagai fallback
+  const [txStatus, setTxStatus] = useState<'idle' | 'pending' | 'confirmed' | 'error'>('idle')
+  
+  // Effect untuk polling transaction status secara manual
+  useEffect(() => {
+    if (!txHash || txStatus !== 'pending') return
+    
+    let intervalId: NodeJS.Timeout
+    
+    const checkTxStatus = async () => {
+      try {
+        if (!publicClient) {
+          console.log('⏳ Public client not available, waiting...')
+          return
+        }
+        const tx = await publicClient.getTransaction({ hash: txHash })
+        if (tx.blockNumber) {
+          // Transaction sudah dikonfirmasi
+          setTxStatus('confirmed')
+          setSuccess(true)
+          setIsGenerating(false)
+          
+          // Mark wallet as minted
+          if (walletAddress) {
+            const mintedWallets = JSON.parse(localStorage.getItem('mintedWallets') || '{}')
+            mintedWallets[walletAddress.toLowerCase()] = true
+            localStorage.setItem('mintedWallets', JSON.stringify(mintedWallets))
+            setHasMinted(true)
+          }
+          
+          // Stop polling
+          clearInterval(intervalId)
+          
+          // Show success message
+          console.log('✅ Transaction confirmed:', txHash)
+        }
+      } catch (err) {
+        // Transaction belum dikonfirmasi, terus polling
+        console.log('⏳ Waiting for transaction confirmation...')
+      }
+    }
+    
+    // Check immediately
+    checkTxStatus()
+    
+    // Then poll every 2 seconds
+    intervalId = setInterval(checkTxStatus, 2000)
+    
+    // Timeout setelah 120 detik
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId)
+      if (txStatus === 'pending') {
+        console.log('⚠️ Transaction confirmation timeout')
+        setIsGenerating(false)
+        setError('Transaction confirmation timed out. Please check Basescan for status.')
+        setTxStatus('error')
+      }
+    }, 120000)
+    
+    return () => {
+      clearInterval(intervalId)
+      clearTimeout(timeoutId)
+    }
+  }, [txHash, txStatus, walletAddress, publicClient])
+  
+  // Reset txStatus saat txHash berubah
+  useEffect(() => {
+    if (txHash) {
+      setTxStatus('pending')
+      setIsGenerating(true)
+      setError(null)
+      setSuccess(false)
+    }
+  }, [txHash])
   
   // Check if user is on the wrong network
   const isWrongNetwork = isConnected && chainId && chainId !== BASE_CHAIN_ID
@@ -143,23 +213,22 @@ export function MiniApp() {
     }
   }, [walletAddress])
 
-  // Handle transaction confirmation
+  // Handle transaction confirmation (fallback untuk errors)
   useEffect(() => {
-    if (isConfirmed) {
-      setSuccess(true)
-      setError(null)
-      // Mark wallet as minted
-      if (walletAddress) {
-        const mintedWallets = JSON.parse(localStorage.getItem('mintedWallets') || '{}')
-        mintedWallets[walletAddress.toLowerCase()] = true
-        localStorage.setItem('mintedWallets', JSON.stringify(mintedWallets))
-        setHasMinted(true)
-      }
+    if (writeError) {
+      setError(writeError.message || 'Transaction failed')
+      setTxStatus('error')
+      setIsGenerating(false)
     }
-    if (isTxError && confirmError) {
-      setError(confirmError.message || 'Transaction failed')
-    }
-  }, [isConfirmed, isTxError, confirmError, walletAddress])
+  }, [writeError])
+  
+  // Reset states saat retry
+  const resetAndRetry = useCallback(() => {
+    setError(null)
+    setSuccess(false)
+    setTxHash(null)
+    setTxStatus('idle')
+  }, [])
 
   const handleMint = async () => {
     if (!walletAddress) {
@@ -175,18 +244,44 @@ export function MiniApp() {
     setError(null)
     setSuccess(false)
     setTxHash(null)
+    setTxStatus('idle')
 
     try {
       const effectiveFid = getEffectiveFid()
+      console.log('🔄 Starting mint transaction...')
+      
       const hash = await writeContractWithGas({
         address: NFT_CONTRACT_ADDRESS as `0x${string}`,
         abi: NFT_ABI,
         functionName: 'mint',
         value: parseEther(MINT_PRICE),
       })
-      setTxHash(hash || null)
+      
+      if (hash) {
+        console.log('✅ Transaction hash received:', hash)
+        setTxHash(hash)
+        setTxStatus('pending')
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Mint failed')
+      console.error('❌ Mint failed:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Mint failed'
+      
+      // Handle specific error cases
+      if (errorMessage.includes('User rejected') || errorMessage.includes('rejected the request') || errorMessage.includes('cancelled')) {
+        setError('Transaction was cancelled. Click "Mint NFT" to try again.')
+      } else if (errorMessage.includes('insufficient funds') || errorMessage.includes('Insufficient')) {
+        setError('Insufficient funds. Please add ETH to your wallet.')
+      } else if (errorMessage.includes('nonce')) {
+        setError('Transaction nonce error. Please try again.')
+      } else if (errorMessage.includes('already minted')) {
+        setError('You have already minted an NFT with this wallet')
+        setHasMinted(true)
+      } else {
+        setError(errorMessage)
+      }
+      
+      setTxStatus('error')
+      setIsGenerating(false)
     }
   }
 
@@ -201,6 +296,12 @@ export function MiniApp() {
     return Math.abs(hash) % 20000 + 1
   }
 
+  const getRarityIcon = (tier: RarityTier) => {
+    const Icon = RARITY_TIERS[tier].icon
+    if (!Icon) return null
+    return <Icon size={20} />
+  }
+
   // Get effective FID - use SDK FID or derive from wallet address
   const getEffectiveFid = (): number => {
     if (fid && fid > 0) {
@@ -210,18 +311,6 @@ export function MiniApp() {
       return hashAddress(walletAddress)
     }
     return 0
-  }
-
-  const resetAndRetry = useCallback(() => {
-    setError(null)
-    setSuccess(false)
-    setTxHash(null)
-  }, [])
-
-  const getRarityIcon = (tier: RarityTier) => {
-    const Icon = RARITY_TIERS[tier].icon
-    if (!Icon) return null
-    return <Icon size={20} />
   }
 
   const getRarityStyle = (tier: RarityTier) => {
@@ -338,32 +427,16 @@ export function MiniApp() {
 
   // Safety timeout to prevent infinite spinner
   useEffect(() => {
-    // If we're generating but no txHash after 60 seconds, something went wrong
+    // If we're pending but no confirmation after 120 seconds, show warning
     const timeoutId = setTimeout(() => {
-      if (isGenerating && !txHash) {
-        console.log('⚠️ Timeout: No transaction hash received, resetting state...')
-        setIsGenerating(false)
-        setError('Transaction timed out. Please try again.')
+      if (txStatus === 'pending' && !success) {
+        console.log('⚠️ Long wait: Transaction still pending after timeout')
+        setError('Transaction is taking longer than expected. Please check Basescan for status.')
       }
-    }, 60000) // 60 seconds timeout
+    }, 120000) // 120 seconds timeout
 
     return () => clearTimeout(timeoutId)
-  }, [isGenerating, txHash])
-
-  // Reset isGenerating when transaction completes or fails
-  useEffect(() => {
-    if (isConfirmed) {
-      setIsGenerating(false)
-    }
-  }, [isConfirmed])
-
-  // Also reset when txHash is set (transaction submitted)
-  useEffect(() => {
-    if (txHash) {
-      // Transaction was submitted, now waiting for confirmation
-      setIsGenerating(true)
-    }
-  }, [txHash])
+  }, [txStatus, success])
 
   // Reset and try your luck again
   const handleRegenerate = () => {
@@ -471,7 +544,7 @@ export function MiniApp() {
             {connectors.map((connector) => (
               <Button
                 key={connector.uid}
-                onClick={() => connect({ connector })}
+                onClick={() => connect(connector)}
                 disabled={isConnecting}
                 className="w-full bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold flex items-center justify-center gap-2 disabled:opacity50 transition-all duration-300 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
                 size="lg"
@@ -654,14 +727,14 @@ export function MiniApp() {
 
               <Button
                 onClick={handleGenerate}
-                disabled={isGenerating || isWritingContract || isConfirming}
+                disabled={isGenerating || isWritingContract || txStatus === 'pending'}
                 className="w-full bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-[0_0_20px_rgba(34,197,94,0.5)]"
                 size="lg"
               >
-                {isGenerating || isWritingContract || isConfirming ? (
+                {isGenerating || isWritingContract || txStatus === 'pending' ? (
                   <>
                     <Loader2 className="animate-spin" size={18} />
-                    {isConfirming ? 'Confirming on blockchain...' : 'Minting your NFT...'}
+                    {txStatus === 'pending' ? 'Confirming on blockchain...' : 'Minting your NFT...'}
                   </>
                 ) : (
                   <>
@@ -811,14 +884,14 @@ export function MiniApp() {
               {/* Mint Button */}
               <Button
                 onClick={handleMint}
-                disabled={isWritingContract || isConfirming}
+                disabled={isWritingContract || txStatus === 'pending'}
                 className="w-full bg-primary hover:bg-primary/80 text-terminal-dark font-mono font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all duration-300 hover:shadow-[0_0_15px_rgba(34,197,94,0.4)]"
                 size="lg"
               >
-                {isWritingContract || isConfirming ? (
+                {isWritingContract || txStatus === 'pending' ? (
                   <span>
                     <Loader2 className="animate-spin" size={18} />
-                    {isConfirming ? 'Confirming...' : 'Minting...'}
+                    {txStatus === 'pending' ? 'Confirming...' : 'Minting...'}
                   </span>
                 ) : (
                   <span>
