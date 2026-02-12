@@ -28,7 +28,7 @@ import {
 
 // Constants
 export const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xBee2A3b777445E212886815A5384f6F4e8902d21'
-export const MINT_PRICE = '0.0001' // ETH ($0.3 at $3000/ETH)
+export const MINT_PRICE = '0.0002' // 0.0002 ETH
 const BASE_CHAIN_ID = base.id
 
 // Get RarityIcon helper - icons are rendered differently in React components
@@ -257,14 +257,14 @@ export function MiniApp() {
   }
 
   // Helper function to hash address for token ID
-  function hashAddress(addr: string): number {
-    let hash = 0
+  function hashAddress(addr: string): bigint {
+    let hash = BigInt(0)
     for (let i = 0; i < addr.length; i++) {
-      const char = addr.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
+      const char = BigInt(addr.charCodeAt(i))
+      hash = (hash << BigInt(5)) - hash + char
       hash = hash & hash
     }
-    return Math.abs(hash) % 20000 + 1
+    return (hash % BigInt(20000)) + BigInt(1)
   }
 
   const getRarityIcon = (_tier: RarityTier) => {
@@ -279,7 +279,7 @@ export function MiniApp() {
       return fid
     }
     if (walletAddress) {
-      return hashAddress(walletAddress)
+      return Number(hashAddress(walletAddress))
     }
     return 0
   }
