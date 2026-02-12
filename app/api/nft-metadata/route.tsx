@@ -18,6 +18,15 @@ export const runtime = 'nodejs'
 const DEFAULT_BASE_URL = 'https://farcaster-fixel.vercel.app'
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || DEFAULT_BASE_URL
 
+// Static image mapping for each rarity (matching the preview in page.tsx)
+const RARITY_IMAGES: Record<RarityTier, string> = {
+  COMMON: '/Pixel Pioneer.png',
+  UNCOMMON: '/Crypto Explorer.png',
+  SILVER: '/Silver Surfer.png',
+  GOLD: '/Golden Goose.png',
+  PLATINUM: '/Legendary Lucker.png',
+}
+
 // Warn if using default URL in production
 if (BASE_URL === DEFAULT_BASE_URL && process.env.NODE_ENV === 'production') {
   console.warn('⚠️ WARNING: NFT metadata is using default BASE_URL. '
@@ -77,13 +86,8 @@ export async function GET(request: NextRequest) {
     const rarity = determineRarity(seed)
     const rarityDetails = RARITY_DETAILS[rarity]
     
-    // Generate image URL
-    const imageUrl = tokenId 
-      ? `${BASE_URL}/api/nft-image?tokenId=${tokenId}`
-      : (fid 
-          ? `${BASE_URL}/api/nft-image?fid=${fid}`
-          : `${BASE_URL}/api/nft-image?address=${address}`
-        )
+    // Generate static image URL based on rarity (matches preview images)
+    const imageUrl = `${BASE_URL}${RARITY_IMAGES[rarity]}`
 
     // Generate external URL for the NFT
     const externalUrl = tokenId
@@ -93,7 +97,7 @@ export async function GET(request: NextRequest) {
     // Build ERC721 compliant metadata
     const metadata = {
       name: `PixelCaster AI #${tokenId || (seed % 20000 + 1).toString().padStart(5, '0')}`,
-      description: rarityDetails.description,
+      description: `A ${rarity.toLowerCase()} NFT from the PixelCaster collection. ${rarityDetails.description}`,
       image: imageUrl,
       external_url: externalUrl,
       animation_url: null,
@@ -117,6 +121,7 @@ export async function GET(request: NextRequest) {
         is_deterministic: !randomize,
       },
       created_by: ownerAddress || 'unknown',
+      rarity_tier: rarity,
     }
 
     // Upload to IPFS via Pinata if configured
