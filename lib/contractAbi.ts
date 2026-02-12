@@ -81,4 +81,4 @@ export const RARITY_DISTRIBUTION = {
   PLATINUM: { min: 999901, max: 1000000, percentage: 0.01 },
 } as const
 
-export const MAX_SUPPLY = 30000
+export const MAX_SUPPLY = 20000

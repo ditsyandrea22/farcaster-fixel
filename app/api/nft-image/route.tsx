@@ -14,6 +14,7 @@ import {
   getTierProperties,
   generateSerialNumber,
 } from '@/lib/rarity'
+import { uploadImageToIPFS, isPinataConfigured } from '@/lib/pinata'
 
 export const runtime = 'nodejs'
 
@@ -58,13 +59,13 @@ export async function GET(request: NextRequest) {
       walletDisplay = `Token #${tokenId}`
     } else if (randomize) {
       seed = generateRandomSeed()
-      walletDisplay = fid ? `FID ${fid}` : `${address!.slice(0, 6)}...${address!.slice(-4)}`
+      walletDisplay = fid ? `FID ${fid}` : (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Unknown')
     } else if (fid) {
       seed = hashFid(fid)
       walletDisplay = `FID ${fid}`
     } else {
       seed = hashAddress(address!)
-      walletDisplay = `${address!.slice(0, 6)}...${address!.slice(-4)}`
+      walletDisplay = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Unknown'
     }
 
     const rarity = determineRarity(seed)
@@ -294,6 +295,38 @@ export async function GET(request: NextRequest) {
         height: 1200,
       }
     )
+
+    // Convert ImageResponse to buffer for IPFS upload
+    const imageBuffer = Buffer.from(await response.arrayBuffer())
+
+    // Upload image to IPFS via Pinata if configured
+    let ipfsHash: string | null = null
+    let ipfsGatewayUrl: string | null = null
+
+    if (isPinataConfigured()) {
+      const ipfsResult = await uploadImageToIPFS(imageBuffer, {
+        name: `pixelcaster-image-${tokenId || fid || address || seed}`,
+        contentType: 'image/png',
+      })
+
+      if (ipfsResult.success && ipfsResult.ipfsHash) {
+        ipfsHash = ipfsResult.ipfsHash
+        ipfsGatewayUrl = ipfsResult.gatewayUrl || null
+        console.log(`✅ NFT image uploaded to IPFS: ${ipfsHash}`)
+      } else {
+        console.warn('⚠️ Failed to upload image to IPFS, using dynamic URL')
+      }
+    }
+
+    // Set appropriate headers
+    response.headers.set('Content-Type', 'image/png')
+    response.headers.set('Cache-Control', 'public, max-age=3600, s-maxage=86400')
+
+    // Add IPFS info to response headers
+    if (ipfsHash) {
+      response.headers.set('X-IPFS-Hash', ipfsHash)
+      response.headers.set('X-IPFS-Gateway-URL', ipfsGatewayUrl || '')
+    }
 
     return response
   } catch (error) {

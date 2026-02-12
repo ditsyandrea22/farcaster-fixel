@@ -63,7 +63,7 @@ export const RARITY_TIERS: Record<RarityTier, RarityConfig> = {
   PLATINUM: { 
     name: 'PLATINUM', 
     rate: 0.01, 
-    color: '#E5E7EB',
+    color: '#a855f7',
   },
 } as const
 

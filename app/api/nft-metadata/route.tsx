@@ -11,6 +11,7 @@ import {
   getAttributes,
   getTierColor,
 } from '@/lib/rarity'
+import { uploadJSONToIPFS, isPinataConfigured, getGatewayUrl } from '@/lib/pinata'
 
 export const runtime = 'nodejs'
 
@@ -94,9 +95,7 @@ export async function GET(request: NextRequest) {
       name: `PixelCaster AI #${tokenId || (seed % 20000 + 1).toString().padStart(5, '0')}`,
       description: rarityDetails.description,
       image: imageUrl,
-      image_url: imageUrl,
       external_url: externalUrl,
-      externalUrl: externalUrl,
       animation_url: null,
       youtube_url: null,
       background_color: getTierColor(rarity).replace('#', ''),
@@ -118,6 +117,49 @@ export async function GET(request: NextRequest) {
         is_deterministic: !randomize,
       },
       created_by: ownerAddress || 'unknown',
+    }
+
+    // Upload to IPFS via Pinata if configured
+    let ipfsHash: string | null = null
+    let ipfsGatewayUrl: string | null = null
+
+    if (isPinataConfigured()) {
+      const ipfsResult = await uploadJSONToIPFS(metadata, {
+        name: `pixelcaster-metadata-${tokenId || seed}`,
+      })
+      
+      if (ipfsResult.success && ipfsResult.ipfsHash) {
+        ipfsHash = ipfsResult.ipfsHash
+        ipfsGatewayUrl = ipfsResult.gatewayUrl || null
+        console.log(`✅ Metadata uploaded to IPFS: ${ipfsHash}`)
+      } else {
+        console.warn('⚠️ Failed to upload metadata to IPFS, using fallback URL')
+      }
+    } else {
+      console.log('ℹ️ Pinata not configured, using dynamic metadata URL')
+    }
+
+    // Add IPFS info to response if available
+    const responseMetadata = {
+      ...metadata,
+      ...(ipfsHash && {
+        ipfs: {
+          hash: ipfsHash,
+          gateway_url: ipfsGatewayUrl,
+          gateway_urls: [
+            ipfsGatewayUrl,
+            `https://gateway.pinata.cloud/ipfs/${ipfsHash}`,
+            `https://ipfs.io/ipfs/${ipfsHash}`,
+            `https://nftstorage.link/ipfs/${ipfsHash}`,
+          ],
+        },
+      }),
+      ...(!ipfsHash && {
+        _warnings: [
+          'IPFS upload not configured - metadata is dynamic',
+          'Configure PINATA_JWT in .env.local for permanent IPFS storage',
+        ],
+      }),
     }
 
     // Add CORS headers for external access

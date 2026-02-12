@@ -255,16 +255,7 @@ export function MiniApp() {
     background: `linear-gradient(135deg, ${RARITY_TIERS[tier].color}10, transparent)`,
   })
 
-  const getFortuneMessage = (tier: RarityTier): string => {
-    const messages = {
-      PLATINUM: ["LEGENDARY! Your luck is cosmic!", "The universe has chosen you!", "Pure platinum destiny awaits!"],
-      GOLD: ["Royal fortune smiles upon you!", "Golden rays of opportunity!", "Majestic destiny unfolds!"],
-      SILVER: ["Shimmering silver path ahead!", "Gentle luck guides your way!", "Bright prospects incoming!"],
-      UNCOMMON: ["Good fortune favors you!", "A lucky breeze blows your way!", "Opportunities await!"],
-      COMMON: ["Every journey begins somewhere!", "Your unique path awaits!", "Your NFT, uniquely yours!"],
-    }
-    return messages[tier][Math.floor(Math.random() * messages[tier].length)]
-  }
+  // Use imported getFortuneMessage from lib/rarity.ts
 
   const handleGenerate = async () => {
     setIsGenerating(true)
