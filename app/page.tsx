@@ -43,17 +43,73 @@ const RARITY_CONFIG = {
   PLATINUM: { name: "PLATINUM", color: "#E5E7EB", rate: "0.01%", icon: "💎" },
 } as const;
 
-// Rarity icons mapping
-const RarityIcon = ({ rarity, size = 20 }: { rarity: keyof typeof RARITY_CONFIG; size?: number }) => {
-  const icons: Record<string, React.ReactNode> = {
-    PLATINUM: <Gem size={size} className="text-purple-300" />,
-    GOLD: <Crown size={size} className="text-yellow-400" />,
-    SILVER: <Star size={size} className="text-gray-300" />,
-    UNCOMMON: <Flame size={size} className="text-orange-400" />,
-    COMMON: <Trophy size={size} className="text-gray-400" />,
-  };
-  return icons[rarity] || null;
-};
+// NFT Preview Card Component
+function NFTPreviewCard({ nft, config }: { nft: typeof SAMPLE_NFTS[0]; config: typeof RARITY_CONFIG[keyof typeof RARITY_CONFIG] }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imgSrc, setImgSrc] = useState<string>('/placeholder.svg');
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    // Generate deterministic image URL based on tokenId
+    const imageUrl = `/api/nft-image?tokenId=${nft.id}`;
+    
+    const img = new window.Image();
+    img.src = imageUrl;
+    
+    img.onload = () => {
+      setImgSrc(imageUrl);
+      setImageLoaded(true);
+    };
+    
+    img.onerror = () => {
+      console.error(`Failed to load image for NFT #${nft.id}`);
+      setError(true);
+      setImageLoaded(true);
+    };
+  }, [nft.id]);
+
+  return (
+    <Card className="p-4 bg-white/5 border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/10">
+      <div className="relative aspect-square mb-3 overflow-hidden rounded-xl bg-white/5">
+        {/* Loading skeleton */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-10 h-10 border-3 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+        
+        {/* NFT Image */}
+        <img
+          src={imgSrc}
+          alt={nft.name}
+          className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+        />
+        
+        {/* Rarity Badge */}
+        <div
+          className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1"
+          style={{
+            backgroundColor: `${config.color}20`,
+            border: `1px solid ${config.color}40`,
+            color: config.color,
+          }}
+        >
+          <span>{config.icon}</span>
+          <span>{config.name}</span>
+        </div>
+      </div>
+      
+      <div className="text-center">
+        <p className="text-sm font-semibold text-white truncate">
+          {nft.name}
+        </p>
+        <p className="text-xs text-gray-500 mt-1">
+          Rate: {config.rate}
+        </p>
+      </div>
+    </Card>
+  );
+}
 
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -120,7 +176,7 @@ export default function Home() {
                 Pixel NFTs
               </span>
               <br />
-              <span className="text-gray-400 text-3xl lg:text-5xl">from FarCaster</span>
+              <span className="text-gray-400 text-3xl lg:text-5xl">Base Mainet</span>
             </h2>
 
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
@@ -259,44 +315,13 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {SAMPLE_NFTS.map((nft) => {
-                const config = RARITY_CONFIG[nft.rarity as keyof typeof RARITY_CONFIG];
-                return (
-                  <Card
-                    key={nft.id}
-                    className="p-4 bg-white/5 border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/10"
-                  >
-                    <div className="relative aspect-square mb-3 overflow-hidden rounded-xl">
-                      <img
-                        src={`/api/nft-image?tokenId=${nft.id}&random=true`}
-                        alt={nft.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg";
-                        }}
-                      />
-                      <div
-                        className="absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold"
-                        style={{
-                          backgroundColor: `${config.color}20`,
-                          border: `1px solid ${config.color}40`,
-                          color: config.color,
-                        }}
-                      >
-                        {config.icon} {config.name}
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-semibold text-white truncate">
-                        {nft.name}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Rate: {config.rate}
-                      </p>
-                    </div>
-                  </Card>
-                );
-              })}
+              {SAMPLE_NFTS.map((nft) => (
+                <NFTPreviewCard
+                  key={nft.id}
+                  nft={nft}
+                  config={RARITY_CONFIG[nft.rarity as keyof typeof RARITY_CONFIG]}
+                />
+              ))}
             </div>
 
             {/* Rarity Distribution Info */}
