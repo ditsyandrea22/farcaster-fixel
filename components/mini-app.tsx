@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { parseEther } from 'viem'
 import { base } from 'wagmi/chains'
 import { usePublicClient } from 'wagmi'
@@ -16,7 +16,7 @@ import useWallet from '@/hooks/useWallet'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, ArrowLeft } from 'lucide-react'
+import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal, Terminal as TerminalIcon, ArrowLeft, Share2, Download, ExternalLink, Copy, Check } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
 import {
   RARITY_TIERS,
@@ -24,12 +24,17 @@ import {
   determineRarityFromAddress,
   getTierProperties,
   getFortuneMessage,
+  getAttributes,
+  generateSerialNumber,
 } from '@/lib/rarity'
+import Confetti from 'react-confetti'
+import canvasConfetti from 'canvas-confetti'
 
 // Constants
 export const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xBee2A3b777445E212886815A5384f6F4e8902d21'
 export const MINT_PRICE = '0.0002' // 0.0002 ETH
 const BASE_CHAIN_ID = base.id
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://farcaster-fixel.vercel.app'
 
 // Get RarityIcon helper - icons are rendered differently in React components
 
@@ -51,6 +56,7 @@ export function MiniApp() {
   const [txHash, setTxHash] = useState<`0x${string}` | null>(null)
   const [hasMinted, setHasMinted] = useState(false)
   const [isCheckingMint, setIsCheckingMint] = useState(false)
+  const [seed, setSeed] = useState<number>(0)
   
   // New states for Generate → Mint flow
   const [isGenerated, setIsGenerated] = useState(false)
@@ -58,8 +64,61 @@ export function MiniApp() {
   const [fortuneMessage, setFortuneMessage] = useState<string>('')
   const [revealedRarity, setRevealedRarity] = useState<RarityTier | null>(null)
   
+  // Share functionality state
+  const [showCopiedToast, setShowCopiedToast] = useState(false)
+  const [isSharing, setIsSharing] = useState(false)
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+  const [showConfetti, setShowConfetti] = useState(false)
+  
   // Public client untuk polling manual jika useWaitForTransactionReceipt gagal
   const publicClient = usePublicClient()
+
+  // Ref for NFT image
+  const nftImageRef = useRef<HTMLImageElement>(null)
+
+  // Get window size for confetti
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight })
+    }
+  }, [])
+
+  // Trigger confetti on success
+  useEffect(() => {
+    if (success && rarity) {
+      setShowConfetti(true)
+      // Trigger canvas confetti for more effects
+      const duration = 3000
+      const end = Date.now() + duration
+      const colors = [RARITY_TIERS[rarity].color, '#22c55e', '#3b82f6', '#a855f7']
+      
+      const frame = () => {
+        canvasConfetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: colors,
+        })
+        canvasConfetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: colors,
+        })
+        
+        if (Date.now() < end) {
+          requestAnimationFrame(frame)
+        }
+      }
+      
+      frame()
+      
+      // Stop confetti after duration
+      setTimeout(() => setShowConfetti(false), duration)
+    }
+  }, [success, rarity])
 
   // Wallet State using our custom hook with gas estimation
   const { 
