@@ -117,7 +117,7 @@ export default function LearnPage() {
         {/* How It Works Section */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold text-white mb-8 font-mono">
-            <span style={{ color: THEME.accent }}>></span> How It Works
+            <span style={{ color: THEME.accent }}></span> How It Works
           </h2>
           <div className="space-y-4">
             {[
@@ -142,7 +142,7 @@ export default function LearnPage() {
         {/* Technical Stack Section */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold text-white mb-8 font-mono">
-            <span style={{ color: THEME.accent }}>></span> Technical Stack
+            <span style={{ color: THEME.accent }}></span> Technical Stack
           </h2>
           <TerminalWindow>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -183,7 +183,7 @@ export default function LearnPage() {
         {/* Security Section */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold text-white mb-8 font-mono">
-            <span style={{ color: THEME.accent }}>></span> Security Considerations
+            <span style={{ color: THEME.accent }}></span> Security Considerations
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
@@ -208,7 +208,7 @@ export default function LearnPage() {
         {/* Resources Section */}
         <section className="mb-16">
           <h2 className="text-3xl font-bold text-white mb-8 font-mono">
-            <span style={{ color: THEME.accent }}>></span> Resources
+            <span style={{ color: THEME.accent }}></span> Resources
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
@@ -230,7 +230,7 @@ export default function LearnPage() {
         {/* CTA Section */}
         <div className="text-center py-12">
           <h2 className="text-3xl font-bold text-white mb-4 font-mono">
-            <span style={{ color: THEME.accent }}>></span> Ready to Start?
+            <span style={{ color: THEME.accent }}></span> Ready to Start?
           </h2>
           <p className="font-mono mb-8" style={{ color: THEME.textMuted }}>Generate your unique NFT based on your FarCaster identity</p>
           <Link href="/mint">
