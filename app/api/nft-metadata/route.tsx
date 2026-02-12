@@ -14,7 +14,14 @@ import {
 
 export const runtime = 'nodejs'
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://farcaster-fixel.vercel.app'
+const DEFAULT_BASE_URL = 'https://farcaster-fixel.vercel.app'
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || DEFAULT_BASE_URL
+
+// Warn if using default URL in production
+if (BASE_URL === DEFAULT_BASE_URL && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️ WARNING: NFT metadata is using default BASE_URL. '
+    + 'Set NEXT_PUBLIC_BASE_URL environment variable for production use.')
+}
 
 export async function GET(request: NextRequest) {
   try {

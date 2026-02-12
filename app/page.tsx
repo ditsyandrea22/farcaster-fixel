@@ -204,12 +204,12 @@ export default function Home() {
               <span className="text-muted-foreground">$</span>{" "}
               <span className="text-accent-foreground">cast send</span>{" "}
               <span className="text-muted-foreground">--to</span>{" "}
-              0x955e339e27d2689b95BfB25C5e2Bce2223321cAA
+              0xBee2A3b777445E212886815A5384f6F4e8902d21
             </div>
             <div className="mt-4 pt-4 border-t border-border">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Cpu size={16} className="text-primary" />
-                <span className="text-xs">Contract: 0x955e339e27d2689b95BfB25C5e2Bce2223321cAA</span>
+                <span className="text-xs">Contract: 0xBee2A3b777445E212886815A5384f6F4e8902d21</span>
               </div>
             </div>
           </Card>

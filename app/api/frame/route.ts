@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const MINI_APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-const NFT_CONTRACT = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x955e339e27d2689b95BfB25C5e2Bce2223321cAA'
+const NFT_CONTRACT = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xBee2A3b777445E212886815A5384f6F4e8902d21'
 const MINT_PRICE = '0.0001'
 
 // Validate FID parameter

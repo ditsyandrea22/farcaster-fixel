@@ -27,7 +27,7 @@ import {
 } from '@/lib/rarity'
 
 // Constants
-export const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0x955e339e27d2689b95BfB25C5e2Bce2223321cAA'
+export const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xBee2A3b777445E212886815A5384f6F4e8902d21'
 export const MINT_PRICE = '0.0001' // ETH ($0.3 at $3000/ETH)
 const BASE_CHAIN_ID = base.id
 
@@ -356,7 +356,8 @@ export function MiniApp() {
     setFortuneMessage(getFortuneMessage(walletRarity))
     
     // Generate unique NFT image based on FID or wallet
-    const imageUrl = fid ? `/api/nft-image?fid=${fid}&rarity=${walletRarity}` : `/api/nft-image?address=${walletAddress}&rarity=${walletRarity}`
+    // Note: rarity is determined by the API from seed (fid/address), not passed as parameter
+    const imageUrl = fid ? `/api/nft-image?fid=${fid}` : `/api/nft-image?address=${walletAddress}`
     setNftImageUrl(imageUrl)
 
     // Now directly mint the NFT - writeContract triggers wallet approval
