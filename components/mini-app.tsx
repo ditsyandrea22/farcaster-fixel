@@ -311,6 +311,11 @@ export function MiniApp() {
                 <p className="animation-delay-100"> Establishing connection...</p>
                 <p className="animation-delay-200"> Preparing environment...</p>
               </div>
+              {!isInMiniApp && (
+                <div className="mt-6">
+                  <BackButton />
+                </div>
+              )}
             </div>
           </TerminalWindow>
         </div>
@@ -355,6 +360,11 @@ export function MiniApp() {
                 ))}
                 <p className="text-center text-gray-600 font-mono text-xs mt-4"> Make sure you have a wallet installed</p>
               </div>
+              {!isInMiniApp && (
+                <div className="mt-4">
+                  <BackButton />
+                </div>
+              )}
             </div>
           </TerminalWindow>
         </div>
@@ -368,11 +378,14 @@ export function MiniApp() {
         <TerminalHeader title="minted" isInMiniApp={isInMiniApp} />
         <div className="max-w-md mx-auto p-4">
           <TerminalWindow className="mb-4">
-            <div className="flex items-center gap-2 mb-4 pb-2 border-b" style={{ borderColor: '#333333' }}>
-              <CheckCircle2 size={16} style={{ color: '#0e8420' }} />
-              <span className="font-mono text-sm text-white">NFT Minted Successfully!</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 pb-2 border-b" style={{ borderColor: '#333333' }}>
+                <CheckCircle2 size={16} style={{ color: '#0e8420' }} />
+                <span className="font-mono text-sm text-white">NFT Minted Successfully!</span>
+              </div>
+              {!isInMiniApp && <BackButton />}
             </div>
-            <h1 className="text-xl font-mono font-bold text-white mb-1"><span style={{ color: '#e95420' }}></span> NFT Minted!</h1>
+            <h1 className="text-xl font-mono font-bold text-white mb-1 mt-3"><span style={{ color: '#e95420' }}></span> NFT Minted!</h1>
             <p className="text-gray-500 font-mono text-sm">You have already claimed your AI NFT</p>
           </TerminalWindow>
           {nftImageUrl && (
@@ -421,6 +434,13 @@ export function MiniApp() {
         <TerminalHeader title="generate" isInMiniApp={isInMiniApp} />
         <div className="max-w-md mx-auto p-4">
           <TerminalWindow className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} style={{ color: '#f0c674' }} />
+                <span className="font-mono text-sm text-white">Your Fortune Awaits</span>
+              </div>
+              {!isInMiniApp && <BackButton />}
+            </div>
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4 animate-pulse" style={{ backgroundColor: 'rgba(233, 84, 32, 0.2)' }}>
                 <Sparkles size={32} style={{ color: '#e95420' }} />
@@ -464,6 +484,11 @@ export function MiniApp() {
                 <p className="animation-delay-200"> Determining your fate...</p>
                 <p className="animation-delay-300"> Finalizing rarity...</p>
               </div>
+              {!isInMiniApp && (
+                <div className="mt-6">
+                  <BackButton />
+                </div>
+              )}
             </div>
           </TerminalWindow>
         </div>
@@ -480,9 +505,12 @@ export function MiniApp() {
         <TerminalHeader title="mint" isInMiniApp={isInMiniApp} />
         <div className="max-w-md mx-auto p-4">
           <TerminalWindow className="mb-4">
-            <div className="flex items-center gap-2 mb-3 pb-2 border-b" style={{ borderColor: '#333333' }}>
-              <Sparkles size={16} style={{ color: '#f0c674' }} />
-              <span className="font-mono text-sm text-white">Your Destiny Revealed!</span>
+            <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: '#333333' }}>
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} style={{ color: '#f0c674' }} />
+                <span className="font-mono text-sm text-white">Your Destiny Revealed!</span>
+              </div>
+              {!isInMiniApp && <BackButton />}
             </div>
             <h1 className="text-xl font-mono font-bold text-white mb-4 text-center"><span style={{ color: '#e95420' }}></span> Your Destiny Revealed!</h1>
             <div className="p-3 rounded-lg border mb-4 text-center" style={{ backgroundColor: tierStyle.bg, borderColor: tierStyle.border }}>
@@ -545,9 +573,12 @@ export function MiniApp() {
       <TerminalHeader title="minted" isInMiniApp={isInMiniApp} />
       <div className="max-w-md mx-auto p-4">
         <TerminalWindow className="mb-4">
-          <div className="flex items-center gap-2 mb-3 pb-2 border-b" style={{ borderColor: '#333333' }}>
-            <CheckCircle2 size={16} style={{ color: '#0e8420' }} />
-            <span className="font-mono text-sm text-white">NFT Minted Successfully!</span>
+          <div className="flex items-center justify-between mb-3 pb-2 border-b" style={{ borderColor: '#333333' }}>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={16} style={{ color: '#0e8420' }} />
+              <span className="font-mono text-sm text-white">NFT Minted Successfully!</span>
+            </div>
+            {!isInMiniApp && <BackButton />}
           </div>
           <div className="text-center mb-4">
             <div className="inline-flex items-center justify-center w-16 h-16 mb-3 rounded-full" style={{ backgroundColor: 'rgba(14, 132, 32, 0.2)' }}>
