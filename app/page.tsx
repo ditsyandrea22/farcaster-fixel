@@ -31,13 +31,13 @@ const THEME = {
   border: '#333333',
 };
 
-// Sample NFT data for preview gallery
+// Sample NFT data for preview gallery with local image paths
 const SAMPLE_NFTS = [
-  { id: 1, seed: 12345, rarity: "COMMON" as const, name: "Pixel Pioneer" },
-  { id: 2, seed: 54321, rarity: "UNCOMMON" as const, name: "Crypto Explorer" },
-  { id: 3, seed: 11111, rarity: "SILVER" as const, name: "Silver Surfer" },
-  { id: 4, seed: 99999, rarity: "GOLD" as const, name: "Golden Goose" },
-  { id: 5, seed: 88888, rarity: "PLATINUM" as const, name: "Legendary Lucker" },
+  { id: 1, seed: 12345, rarity: "COMMON" as const, name: "Pixel Pioneer", image: "/Pixel Pioneer.png" },
+  { id: 2, seed: 54321, rarity: "UNCOMMON" as const, name: "Crypto Explorer", image: "/Crypto Explorer.png" },
+  { id: 3, seed: 11111, rarity: "SILVER" as const, name: "Silver Surfer", image: "/Silver Surfer.png" },
+  { id: 4, seed: 99999, rarity: "GOLD" as const, name: "Golden Goose", image: "/Golden Goose.png" },
+  { id: 5, seed: 88888, rarity: "PLATINUM" as const, name: "Legendary Lucker", image: "/Legendary Lucker.png" },
 ];
 
 // Rarity configuration for display
@@ -71,21 +71,20 @@ function TerminalWindow({ children, className = "", title = "" }: { children: Re
 // NFT Preview Card Component
 function NFTPreviewCard({ nft, config }: { nft: typeof SAMPLE_NFTS[0]; config: typeof RARITY_CONFIG[keyof typeof RARITY_CONFIG] }) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imgSrc, setImgSrc] = useState<string>("/placeholder.svg");
+  const [imgSrc, setImgSrc] = useState<string>(nft.image || "/placeholder.svg");
 
   useEffect(() => {
-    const imageUrl = `/api/nft-image?tokenId=${nft.id}`;
     const img = new window.Image();
-    img.src = imageUrl;
+    img.src = nft.image || "/placeholder.svg";
     img.onload = () => {
-      setImgSrc(imageUrl);
+      setImgSrc(nft.image || "/placeholder.svg");
       setImageLoaded(true);
     };
     img.onerror = () => {
       setImgSrc("/placeholder.svg");
       setImageLoaded(true);
     };
-  }, [nft.id]);
+  }, [nft.image]);
 
   return (
     <div className="p-4 border-2 rounded-lg transition-all duration-300 hover:scale-105" style={{ backgroundColor: THEME.bgSecondary, borderColor: THEME.border }}>
