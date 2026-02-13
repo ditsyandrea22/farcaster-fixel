@@ -272,7 +272,16 @@ export function MiniApp() {
     setIsGenerated(false)
     if (!walletAddress) { setError('Wallet not connected'); setIsGenerating(false); return }
     if (hasMinted) { setError('You have already minted an NFT with this wallet'); setIsGenerating(false); return }
+    
     const walletRarity = determineRarityFromAddress(walletAddress)
+    
+    // Handle invalid wallet address (should not happen with valid wallet)
+    if (!walletRarity) {
+      setError('Invalid wallet address'); 
+      setIsGenerating(false)
+      return
+    }
+    
     setRarity(walletRarity)
     setRevealedRarity(walletRarity)
     setFortuneMessage(getFortuneMessage(walletRarity))
