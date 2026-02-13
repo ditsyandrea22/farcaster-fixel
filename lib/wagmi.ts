@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { createConfig, http, type CreateConnectorFn } from "wagmi";
 import { base } from "wagmi/chains";
 import { farcasterFrame } from "@farcaster/miniapp-wagmi-connector";
@@ -42,12 +41,10 @@ export async function getWagmiConfig() {
     
     // Only add metaMask connector on client side
     if (metaMaskConnector) {
-      // @ts-expect-error - MetaMask connector type mismatch with Wagmi v2
       connectors.push(metaMaskConnector);
     }
     
     // Add coinbaseWallet
-    // @ts-expect-error - Coinbase wallet connector type mismatch with Wagmi v2
     connectors.push(coinbaseWallet({
       appName: "Farcaster Mini App",
       appLogoUrl: "https://example.com/logo.png",

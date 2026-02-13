@@ -52,10 +52,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
 
-    // Log only in debug mode (avoid leaking addresses in production logs)
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[Debug] Looking up FID for address: ${trimmedAddress.substring(0, 10)}...`)
-    }
+    // No logging in production to avoid leaking addresses
 
     // Method 1: Try Neynar's fetch user by custody address
     // This is more reliable for finding users by their connected wallet

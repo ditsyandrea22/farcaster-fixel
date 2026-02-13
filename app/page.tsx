@@ -167,7 +167,7 @@ export default function Home() {
               Generate & Mint{" "}
               <span style={{ color: THEME.accent }}>Pixel NFTs</span>
               <br />
-              <span className="text-3xl lg:text-5xl" style={{ color: THEME.textMuted }}>from Base Mainet</span>
+              <span className="text-3xl lg:text-5xl" style={{ color: THEME.textMuted }}>from Base Mainnet</span>
             </h2>
 
             <p className="text-xl max-w-2xl mx-auto font-mono" style={{ color: THEME.textMuted }}>

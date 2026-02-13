@@ -8,7 +8,7 @@
  * - Sliding window algorithm for more accurate limiting
  */
 
-import { getRateLimitResult as inMemoryRateLimit } from './rate-limit-simple'
+import { getRateLimitResult as inMemoryRateLimit } from './rate-limit'
 
 // ============================================================================
 // Configuration

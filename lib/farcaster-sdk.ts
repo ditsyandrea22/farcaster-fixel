@@ -363,7 +363,7 @@ export function useFarcasterWallet(): WalletState & {
           params: [{
             from: walletState.address,
             to: params.to,
-            value: params.value.startsWith('0x') ? params.value : `0x${parseInt(params.value).toString(16)}`,
+            value: params.value.startsWith('0x') ? params.value : `0x${BigInt(params.value).toString(16)}`,
             data: params.data || '0x',
           }],
         });

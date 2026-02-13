@@ -20,14 +20,14 @@ export default function MintPage() {
     async function init() {
       try {
         await sdk.actions.ready();
-        console.log("✅ Farrcaster READY (mint)");
+        console.log("✅ FarCaster READY (mint)");
         setReady(true);
         
         // Initialize wagmi config asynchronously
         const wagmiConfig = await getWagmiConfig();
         setConfig(wagmiConfig);
       } catch (e) {
-        console.error("❌ Farrcaster ready failed", e);
+        console.error("❌ FarCaster ready failed", e);
       }
     }
 
@@ -38,7 +38,7 @@ export default function MintPage() {
   if (!ready || !config) {
     return (
       <div className="flex h-screen items-center justify-center text-sm text-muted-foreground">
-        Initializing Farrcaster…
+        Initializing FarCaster…
       </div>
     );
   }
