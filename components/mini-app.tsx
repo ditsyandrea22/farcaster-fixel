@@ -10,6 +10,7 @@ import { sdk } from '@farcaster/miniapp-sdk'
 import useWallet from '@/hooks/useWallet'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import Link from 'next/link'
 import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal as TerminalIcon, ArrowLeft, Zap, Terminal } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
 import { RARITY_TIERS, type RarityTier, determineRarityFromAddress, getTierProperties, getFortuneMessage, generateSerialNumber } from '@/lib/rarity'
@@ -63,6 +64,12 @@ function TerminalHeader({ title, isInMiniApp }: { title: string; isInMiniApp: bo
           <span className="font-mono text-xs" style={{ color: '#999999' }}>bash — {title}</span>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/">
+            <button className="flex items-center gap-2 px-3 py-1.5 bg-transparent border rounded font-mono text-xs transition-colors" style={{ borderColor: '#e95420', color: '#e95420' }}>
+              <ArrowLeft size={12} />
+              <span>cd ..</span>
+            </button>
+          </Link>
           {isInMiniApp ? (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono" style={{ backgroundColor: '#0e8420', color: '#ffffff' }}>
               <Shield size={10} /> Mini App
