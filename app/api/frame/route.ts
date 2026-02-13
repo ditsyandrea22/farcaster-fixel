@@ -22,6 +22,39 @@ function isValidFid(fid: string): boolean {
   return !isNaN(num) && num > 0 && num <= 99999999999
 }
 
+// Generate Frame HTML helper function
+function generateFrameHtml(
+  imageUrl: string,
+  buttonText: string,
+  buttonAction: string,
+  buttonTarget: string,
+  title: string,
+  description: string
+): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta property="og:title" content="${escapeHtml(title)}" />
+        <meta property="og:description" content="${escapeHtml(description)}" />
+        <meta property="og:image" content="${imageUrl}" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="1200" />
+        <meta property="fc:frame" content="vNext" />
+        <meta property="fc:frame:post_url" content="${MINI_APP_URL}/api/frame" />
+        <meta property="fc:frame:image:aspect_ratio" content="1:1" />
+        <meta property="fc:frame:image" content="${imageUrl}" />
+        <meta property="fc:frame:button:1" content="${escapeHtml(buttonText)}" />
+        <meta property="fc:frame:button:1:action" content="${escapeHtml(buttonAction)}" />
+        <meta property="fc:frame:button:1:target" content="${buttonTarget}" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="${imageUrl}" />
+      </head>
+      <body></body>
+    </html>
+  `
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -40,27 +73,14 @@ export async function POST(request: NextRequest) {
     const escapedFid = escapeHtml(String(fid))
     
     // Generate Frame HTML response with OG meta tags for better preview
-    const frameHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta property="og:title" content="Mint Base NFT" />
-          <meta property="og:description" content="Mint your exclusive Base NFT with your FarCaster identity" />
-          <meta property="og:image" content="${MINI_APP_URL}/Legendary-Lucker.png" />
-          <meta property="og:image:width" content="1200" />
-          <meta property="og:image:height" content="1200" />
-          <meta property="fc:frame" content="vNext" />
-          <meta property="fc:frame:post_url" content="${MINI_APP_URL}/api/frame" />
-          <meta property="fc:frame:image:aspect_ratio" content="1:1" />
-          <meta property="fc:frame:button:1" content="Open Mini App" />
-          <meta property="fc:frame:button:1:action" content="link" />
-          <meta property="fc:frame:button:1:target" content="${MINI_APP_URL}/mint?fid=${escapedFid}" />
-          <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:image" content="${MINI_APP_URL}/Legendary-Lucker.png" />
-        </head>
-        <body></body>
-      </html>
-    `
+    const frameHtml = generateFrameHtml(
+      `${MINI_APP_URL}/Legendary-Lucker.png`,
+      'Open Mini App',
+      'link',
+      `${MINI_APP_URL}/mint?fid=${escapedFid}`,
+      'Mint Base NFT',
+      'Mint your exclusive Base NFT with your FarCaster identity'
+    )
 
     return new NextResponse(frameHtml, {
       headers: {
@@ -85,11 +105,17 @@ export async function GET(request: NextRequest) {
         <head>
           <meta property="og:title" content="Invalid FID" />
           <meta property="og:description" content="Invalid FarCaster ID provided" />
+          <meta property="og:image" content="${MINI_APP_URL}/splash.png" />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="1200" />
           <meta property="fc:frame" content="vNext" />
-          <meta property="fc:frame:image" content="${MINI_APP_URL}/splash.png" />
+          <meta property="fc:frame:post_url" content="${MINI_APP_URL}/api/frame" />
+          <meta property="fc:frame:image:aspect_ratio" content="1:1" />
           <meta property="fc:frame:button:1" content="Try Again" />
           <meta property="fc:frame:button:1:action" content="link" />
           <meta property="fc:frame:button:1:target" content="${MINI_APP_URL}" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:image" content="${MINI_APP_URL}/splash.png" />
         </head>
         <body></body>
       </html>
@@ -103,28 +129,15 @@ export async function GET(request: NextRequest) {
 
   // Escape FID for safe HTML insertion
   const escapedFid = escapeHtml(fid)
-  
-  const frameHtml = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta property="og:title" content="Mint Base NFT" />
-        <meta property="og:description" content="Mint your exclusive Base NFT for ${MINT_PRICE} ETH" />
-        <meta property="og:image" content="${MINI_APP_URL}/Legendary-Lucker.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="1200" />
-        <meta property="fc:frame" content="vNext" />
-        <meta property="fc:frame:image" content="${MINI_APP_URL}/Legendary-Lucker.png" />
-        <meta property="fc:frame:image:aspect_ratio" content="1:1" />
-        <meta property="fc:frame:button:1" content="Mint on Base" />
-        <meta property="fc:frame:button:1:action" content="link" />
-        <meta property="fc:frame:button:1:target" content="${MINI_APP_URL}/mint?fid=${escapedFid}" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="${MINI_APP_URL}/Legendary-Lucker.png" />
-      </head>
-      <body></body>
-    </html>
-  `
+
+  const frameHtml = generateFrameHtml(
+    `${MINI_APP_URL}/Legendary-Lucker.png`,
+    'Mint on Base',
+    'link',
+    `${MINI_APP_URL}/mint?fid=${escapedFid}`,
+    'Mint Base NFT',
+    `Mint your exclusive Base NFT for ${MINT_PRICE} ETH`
+  )
 
   return new NextResponse(frameHtml, {
     headers: {
