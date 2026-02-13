@@ -58,11 +58,22 @@ export async function GET(request: NextRequest) {
 
     const fid = request.nextUrl.searchParams.get('fid')
     const address = request.nextUrl.searchParams.get('address')
-    const tokenId = request.nextUrl.searchParams.get('tokenId')
+    const tokenIdParam = request.nextUrl.searchParams.get('tokenId')
     const randomize = request.nextUrl.searchParams.get('random') === 'true'
 
-    if (!fid && !address && !tokenId) {
+    if (!fid && !address && !tokenIdParam) {
       return NextResponse.json({ error: 'FID, wallet address, or token ID is required' }, { status: 400 })
+    }
+
+    // Parse and validate tokenId
+    let tokenId: number | null = null
+    if (tokenIdParam) {
+      const parsedTokenId = parseInt(tokenIdParam, 10)
+      if (!isNaN(parsedTokenId) && parsedTokenId > 0) {
+        tokenId = parsedTokenId
+      } else {
+        return NextResponse.json({ error: 'Invalid token ID' }, { status: 400 })
+      }
     }
 
     // Determine the seed for this NFT
@@ -71,14 +82,26 @@ export async function GET(request: NextRequest) {
     
     if (tokenId) {
       // If tokenId is provided, use it as the seed (deterministic)
-      seed = parseInt(tokenId, 10) || generateRandomSeed()
+      seed = tokenId
     } else if (randomize) {
       // Truly random seed for each request
       seed = generateRandomSeed()
       ownerAddress = address || null
     } else {
       // Deterministic seed based on FID or address
-      seed = fid ? hashFid(fid) : hashAddress(address!)
+      if (fid) {
+        const hashedFid = hashFid(fid)
+        if (hashedFid === null) {
+          return NextResponse.json({ error: 'Invalid FID format' }, { status: 400 })
+        }
+        seed = hashedFid
+      } else {
+        const hashedAddress = hashAddress(address!)
+        if (hashedAddress === null) {
+          return NextResponse.json({ error: 'Invalid wallet address format' }, { status: 400 })
+        }
+        seed = hashedAddress
+      }
       ownerAddress = address || null
     }
 

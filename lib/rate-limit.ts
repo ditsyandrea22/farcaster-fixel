@@ -6,6 +6,7 @@
  * - Redis support for production (via upstash/redis)
  * - Configurable windows and limits
  * - Sliding window algorithm for more accurate limiting
+ * - Automatic cleanup of expired entries
  */
 
 // ============================================================================
@@ -55,12 +56,39 @@ export interface RateLimitResultWithHeaders extends RateLimitResult {
 export { defaultConfig, strictConfig, generousConfig }
 
 // ============================================================================
-// Rate Limiting Implementation (In-Memory Fallback)
+// Rate Limiting Implementation (In-Memory Fallback with Auto-Cleanup)
 // ============================================================================
 
-// In-memory store (note: this will reset on server restart in development)
-// For production, consider using Redis with upstash/ratelimit
+// In-memory store with automatic cleanup
 const ipCache = new Map<string, { count: number; resetTime: number }>()
+
+// Cleanup interval in milliseconds (every 5 minutes)
+const CLEANUP_INTERVAL = 5 * 60 * 1000
+
+// Track if cleanup interval is set up
+let cleanupIntervalId: ReturnType<typeof setInterval> | null = null
+
+/**
+ * Initialize automatic cleanup of expired entries
+ */
+function initializeCleanup() {
+  if (typeof setInterval === 'undefined' || cleanupIntervalId !== null) {
+    return
+  }
+  
+  cleanupIntervalId = setInterval(() => {
+    cleanupExpiredEntries()
+  }, CLEANUP_INTERVAL)
+  
+  // Mark interval to be cleared on process exit
+  if (typeof process !== 'undefined' && process.on) {
+    process.on('exit', () => {
+      if (cleanupIntervalId) {
+        clearInterval(cleanupIntervalId)
+      }
+    })
+  }
+}
 
 /**
  * In-memory rate limiter implementation
@@ -116,6 +144,9 @@ export async function getRateLimitResult(
   ip: string,
   config: RateLimitConfig = defaultConfig
 ): Promise<RateLimitResult> {
+  // Initialize automatic cleanup
+  initializeCleanup()
+  
   // For production, this would integrate with Redis
   // Example Redis integration:
   // import { Ratelimit } from "@upstash/ratelimit"
@@ -204,13 +235,21 @@ export function createRateLimitExceededResponse(
 
 /**
  * Cleanup old entries periodically
+ * This is now called automatically by the cleanup interval
  */
 export function cleanupExpiredEntries(): void {
   const now = Date.now()
+  let cleanedCount = 0
+  
   for (const [ip, data] of ipCache.entries()) {
     if (now > data.resetTime) {
       ipCache.delete(ip)
+      cleanedCount++
     }
+  }
+  
+  if (cleanedCount > 0) {
+    console.log(`[RateLimit] Cleaned up ${cleanedCount} expired entries. Current cache size: ${ipCache.size}`)
   }
 }
 

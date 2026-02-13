@@ -43,10 +43,10 @@ export async function GET(request: NextRequest) {
 
     const fid = request.nextUrl.searchParams.get('fid')
     const address = request.nextUrl.searchParams.get('address')
-    const tokenId = request.nextUrl.searchParams.get('tokenId')
+    const tokenIdParam = request.nextUrl.searchParams.get('tokenId')
     const randomize = request.nextUrl.searchParams.get('random') === 'true'
 
-    if (!fid && !address && !tokenId) {
+    if (!fid && !address && !tokenIdParam) {
       return NextResponse.json({ error: 'FID or wallet address is required' }, { status: 400 })
     }
 
@@ -54,17 +54,36 @@ export async function GET(request: NextRequest) {
     let seed: number
     let walletDisplay: string
     
+    // Parse and validate tokenId
+    let tokenId: number | null = null
+    if (tokenIdParam) {
+      const parsedTokenId = parseInt(tokenIdParam, 10)
+      if (!isNaN(parsedTokenId) && parsedTokenId > 0) {
+        tokenId = parsedTokenId
+      } else {
+        return NextResponse.json({ error: 'Invalid token ID' }, { status: 400 })
+      }
+    }
+    
     if (tokenId) {
-      seed = parseInt(tokenId, 10) || generateRandomSeed()
+      seed = tokenId
       walletDisplay = `Token #${tokenId}`
     } else if (randomize) {
       seed = generateRandomSeed()
       walletDisplay = fid ? `FID ${fid}` : (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Unknown')
     } else if (fid) {
-      seed = hashFid(fid)
+      const hashedFid = hashFid(fid)
+      if (hashedFid === null) {
+        return NextResponse.json({ error: 'Invalid FID format' }, { status: 400 })
+      }
+      seed = hashedFid
       walletDisplay = `FID ${fid}`
     } else {
-      seed = hashAddress(address!)
+      const hashedAddress = hashAddress(address!)
+      if (hashedAddress === null) {
+        return NextResponse.json({ error: 'Invalid wallet address format' }, { status: 400 })
+      }
+      seed = hashedAddress
       walletDisplay = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Unknown'
     }
 

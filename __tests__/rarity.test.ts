@@ -30,36 +30,67 @@ describe('Rarity System', () => {
   describe('hashFid', () => {
     it('should return same hash for same FID', () => {
       const fid = '12345'
-      expect(hashFid(fid)).toBe(hashFid(fid))
+      const result1 = hashFid(fid)
+      const result2 = hashFid(fid)
+      expect(result1).not.toBeNull()
+      expect(result1).toBe(result2)
     })
 
     it('should return different hash for different FIDs', () => {
-      expect(hashFid('12345')).not.toBe(hashFid('67890'))
+      const result1 = hashFid('12345')
+      const result2 = hashFid('67890')
+      expect(result1).not.toBeNull()
+      expect(result2).not.toBeNull()
+      expect(result1).not.toBe(result2)
     })
 
-    it('should handle empty string', () => {
-      expect(hashFid('')).toBe(0)
+    it('should return null for empty string', () => {
+      expect(hashFid('')).toBeNull()
+    })
+
+    it('should return null for invalid input', () => {
+      expect(hashFid('abc')).toBeNull()
+      expect(hashFid(' ')).toBeNull()
     })
 
     it('should handle numeric FID', () => {
-      expect(hashFid('0')).toBe(0)
       expect(hashFid('1')).toBe(1)
+      expect(hashFid('12345')).toBe(12345)
+    })
+
+    it('should return null for zero', () => {
+      expect(hashFid('0')).toBeNull()
     })
   })
 
   describe('hashAddress', () => {
     it('should return same hash for same address', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678'
-      expect(hashAddress(address)).toBe(hashAddress(address))
+      const result1 = hashAddress(address)
+      const result2 = hashAddress(address)
+      expect(result1).not.toBeNull()
+      expect(result1).toBe(result2)
     })
 
     it('should return different hash for different addresses', () => {
-      expect(hashAddress('0x1234567890abcdef1234567890abcdef12345678'))
-        .not.toBe(hashAddress('0x87654321fedcba0987654321fedcba0987654321'))
+      const result1 = hashAddress('0x1234567890abcdef1234567890abcdef12345678')
+      const result2 = hashAddress('0x87654321fedcba0987654321fedcba0987654321')
+      expect(result1).not.toBeNull()
+      expect(result2).not.toBeNull()
+      expect(result1).not.toBe(result2)
     })
 
-    it('should handle short address', () => {
-      expect(hashAddress('0x1')).toBeGreaterThanOrEqual(0)
+    it('should return null for invalid address', () => {
+      expect(hashAddress('invalid')).toBeNull()
+      expect(hashAddress('')).toBeNull()
+      expect(hashAddress('0x123')).toBeNull() // Too short
+    })
+
+    it('should return hash in valid range', () => {
+      const address = '0x1234567890abcdef1234567890abcdef12345678'
+      const result = hashAddress(address)
+      expect(result).not.toBeNull()
+      expect(result).toBeGreaterThanOrEqual(0)
     })
   })
 
@@ -125,17 +156,47 @@ describe('Rarity System', () => {
   describe('determineRarityFromFid', () => {
     it('should return consistent rarity for same FID', () => {
       const fid = '12345'
-      
-      expect(determineRarityFromFid(fid)).toBe(determineRarityFromFid(fid))
+      const result1 = determineRarityFromFid(fid)
+      const result2 = determineRarityFromFid(fid)
+      expect(result1).not.toBeNull()
+      expect(result2).not.toBeNull()
+      expect(result1).toBe(result2)
+    })
+
+    it('should return null for invalid FID', () => {
+      expect(determineRarityFromFid('')).toBeNull()
+      expect(determineRarityFromFid('abc')).toBeNull()
+    })
+
+    it('should return valid rarity tier for valid FID', () => {
+      const validTiers = Object.keys(RARITY_TIERS) as RarityTier[]
+      const result = determineRarityFromFid('12345')
+      expect(result).not.toBeNull()
+      expect(validTiers).toContain(result)
     })
   })
 
   describe('determineRarityFromAddress', () => {
     it('should return consistent rarity for same address', () => {
       const address = '0x1234567890abcdef1234567890abcdef12345678'
-      
-      expect(determineRarityFromAddress(address))
-        .toBe(determineRarityFromAddress(address))
+      const result1 = determineRarityFromAddress(address)
+      const result2 = determineRarityFromAddress(address)
+      expect(result1).not.toBeNull()
+      expect(result2).not.toBeNull()
+      expect(result1).toBe(result2)
+    })
+
+    it('should return null for invalid address', () => {
+      expect(determineRarityFromAddress('')).toBeNull()
+      expect(determineRarityFromAddress('invalid')).toBeNull()
+    })
+
+    it('should return valid rarity tier for valid address', () => {
+      const validTiers = Object.keys(RARITY_TIERS) as RarityTier[]
+      const address = '0x1234567890abcdef1234567890abcdef12345678'
+      const result = determineRarityFromAddress(address)
+      expect(result).not.toBeNull()
+      expect(validTiers).toContain(result)
     })
   })
 

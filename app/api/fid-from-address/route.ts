@@ -39,18 +39,32 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    if (!NEYNAR_API_KEY) {
-      return NextResponse.json({ error: 'Server configuration error: NEYNAR_API_KEY not set' }, { status: 500 })
+    // Validate Ethereum address format
+    const trimmedAddress = address.trim().toLowerCase()
+    if (!/^0x[a-f0-9]{40}$/.test(trimmedAddress)) {
+      return NextResponse.json(
+        { error: 'Invalid wallet address format' },
+        { status: 400 }
+      )
     }
 
-    console.log(`Looking up FID for address: ${address}`)
+    if (!NEYNAR_API_KEY) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    // Log only in debug mode (avoid leaking addresses in production logs)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[Debug] Looking up FID for address: ${trimmedAddress.substring(0, 10)}...`)
+    }
 
     // Method 1: Try Neynar's fetch user by custody address
     // This is more reliable for finding users by their connected wallet
     try {
-      console.log('Trying custody address lookup...')
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Debug] Trying custody address lookup...')
+      }
       const response = await fetch(
-        `https://api.neynar.com/v2/farcaster/user/custody?custody_address=${address}`,
+        `https://api.neynar.com/v2/farcaster/user/custody?custody_address=${trimmedAddress}`,
         {
           headers: {
             'x-api-key': NEYNAR_API_KEY || '',

@@ -131,28 +131,65 @@ function mulberry32(seed: number): () => number {
 // ============================================================================
 
 /**
- * Hash FID to number for seeding
+ * Hash FID to number for seeding with proper validation
  * @param fid - FarCaster ID as string
- * @returns Hash value
+ * @returns Hash value or null if invalid
  */
-export function hashFid(fid: string): number {
-  const fidNum = parseInt(fid, 10) || 0
+export function hashFid(fid: string): number | null {
+  if (!fid || typeof fid !== 'string') {
+    return null
+  }
+  
+  const trimmedFid = fid.trim()
+  if (trimmedFid === '') {
+    return null
+  }
+  
+  const fidNum = parseInt(trimmedFid, 10)
+  
+  // Check if parsing was successful (NaN means invalid)
+  if (isNaN(fidNum)) {
+    return null
+  }
+  
+  // Validate FID is a positive integer
+  if (fidNum <= 0 || !Number.isInteger(fidNum)) {
+    return null
+  }
+  
   return fidNum
 }
 
 /**
- * Hash wallet address to number for seeding
+ * Hash wallet address to number for seeding with proper validation
  * @param address - Ethereum wallet address
- * @returns Hash value
+ * @returns Hash value or null if invalid
  */
-export function hashAddress(address: string): number {
-  let hash = 0
-  for (let i = 0; i < address.length; i++) {
-    const char = address.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
+export function hashAddress(address: string): number | null {
+  if (!address || typeof address !== 'string') {
+    return null
   }
-  return Math.abs(hash)
+  
+  // Validate Ethereum address format
+  const trimmedAddress = address.trim().toLowerCase()
+  if (!/^0x[a-f0-9]{40}$/.test(trimmedAddress)) {
+    return null
+  }
+  
+  // Use a more robust hash function to reduce collision risk
+  // Use BigInt for full 64-bit integer arithmetic
+  let hash = BigInt(0)
+  const MASK = BigInt(0xFFFFFFFFFFFFFFFF)
+  for (let i = 2; i < trimmedAddress.length; i++) { // Skip '0x' prefix
+    const charCode = BigInt(trimmedAddress.charCodeAt(i))
+    hash = (hash << BigInt(5)) - hash + charCode
+    // Keep hash within reasonable bounds while maintaining uniqueness
+    hash = hash & MASK
+  }
+  
+  // Convert to positive number and mod for seed range
+  const hashNumber = hash > 0 ? Number(hash) : Number(-hash)
+  return hashNumber % 1000000
 }
 
 /**
@@ -203,19 +240,27 @@ export function determineRarity(seed: number): RarityTier {
 /**
  * Determine rarity from FID (convenience function)
  * @param fid - FarCaster ID
- * @returns Rarity tier
+ * @returns Rarity tier or null if FID is invalid
  */
-export function determineRarityFromFid(fid: string): RarityTier {
-  return determineRarity(hashFid(fid))
+export function determineRarityFromFid(fid: string): RarityTier | null {
+  const hashedFid = hashFid(fid)
+  if (hashedFid === null) {
+    return null
+  }
+  return determineRarity(hashedFid)
 }
 
 /**
  * Determine rarity from wallet address (convenience function)
  * @param address - Ethereum wallet address
- * @returns Rarity tier
+ * @returns Rarity tier or null if address is invalid
  */
-export function determineRarityFromAddress(address: string): RarityTier {
-  return determineRarity(hashAddress(address))
+export function determineRarityFromAddress(address: string): RarityTier | null {
+  const hashedAddress = hashAddress(address)
+  if (hashedAddress === null) {
+    return null
+  }
+  return determineRarity(hashedAddress)
 }
 
 // ============================================================================
