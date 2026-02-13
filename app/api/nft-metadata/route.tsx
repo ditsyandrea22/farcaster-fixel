@@ -162,12 +162,18 @@ export async function GET(request: NextRequest) {
       if (ipfsResult.success && ipfsResult.ipfsHash) {
         ipfsHash = ipfsResult.ipfsHash
         ipfsGatewayUrl = ipfsResult.gatewayUrl || null
-        console.log(`✅ Metadata uploaded to IPFS: ${ipfsHash}`)
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`✅ Metadata uploaded to IPFS: ${ipfsHash}`)
+        }
       } else {
-        console.warn('⚠️ Failed to upload metadata to IPFS, using fallback URL')
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('⚠️ Failed to upload metadata to IPFS, using fallback URL')
+        }
       }
     } else {
-      console.log('ℹ️ Pinata not configured, using dynamic metadata URL')
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('ℹ️ Pinata not configured, using dynamic metadata URL')
+      }
     }
 
     // Add IPFS info to response if available

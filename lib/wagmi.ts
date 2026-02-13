@@ -23,15 +23,28 @@ async function getMetaMaskConnector() {
   }
 }
 
-// Create config with dynamic connectors
+// Singleton config instance
+let wagmiConfig: ReturnType<typeof createConfig> | null = null;
 let configPromise: Promise<ReturnType<typeof createConfig>> | null = null;
+let configInitialized = false;
+
+// Mutex for thread-safe initialization
+type InitializeConfigFn = () => ReturnType<typeof createConfig>;
+let initFn: InitializeConfigFn | null = null;
 
 export async function getWagmiConfig() {
+  // Return cached config if already initialized
+  if (configInitialized && wagmiConfig) {
+    return wagmiConfig;
+  }
+  
+  // Return existing promise if initialization is in progress
   if (configPromise) {
     return configPromise;
   }
   
-  configPromise = (async () => {
+  // Create initialization function
+  const initialize = async (): Promise<ReturnType<typeof createConfig>> => {
     const metaMaskConnector = await getMetaMaskConnector();
     
     const connectors: CreateConnectorFn[] = [
@@ -50,16 +63,27 @@ export async function getWagmiConfig() {
       appLogoUrl: "https://example.com/logo.png",
     }));
     
-    return createConfig({
+    wagmiConfig = createConfig({
       chains: [base],
       connectors,
       transports: {
         [base.id]: BASE_RPC_URL ? http(BASE_RPC_URL) : http(),
       },
     });
-  })();
+    
+    configInitialized = true;
+    return wagmiConfig;
+  };
   
-  return configPromise;
+  configPromise = initialize();
+  
+  try {
+    const result = await configPromise;
+    return result;
+  } finally {
+    // Clear promise after completion to allow garbage collection
+    configPromise = null;
+  }
 }
 
 // Re-export base chain for convenience

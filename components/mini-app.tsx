@@ -563,7 +563,19 @@ export function MiniApp() {
                   <p className="text-gray-500 font-mono text-xs">Confirming on Base network...</p>
                 </div>
               </div>
-              <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="font-mono text-xs mt-2 hover:underline block" style={{ color: '#e95420' }}>{txHash.slice(0, 10)}...{txHash.slice(-8)} ↗</a>
+              <a 
+                href={txHash ? `https://basescan.org/tx/${txHash}` : '#'} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="font-mono text-xs mt-2 hover:underline block" 
+                style={{ 
+                  color: '#e95420',
+                  pointerEvents: txHash ? 'auto' : 'none',
+                  opacity: txHash ? 1 : 0.5 
+                }}
+              >
+                {txHash ? `${txHash.slice(0, 10)}...${txHash.slice(-8)}` : 'Pending...'} ↗
+              </a>
             </TerminalWindow>
           )}
         </div>

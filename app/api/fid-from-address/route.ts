@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
     }
 
     // No logging in production to avoid leaking addresses
-
     // Method 1: Try Neynar's fetch user by custody address
     // This is more reliable for finding users by their connected wallet
     try {
@@ -69,11 +68,15 @@ export async function GET(request: NextRequest) {
         }
       )
       
-      console.log('Custody lookup response status:', response.status)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Custody lookup response status:', response.status)
+      }
       
       if (response.ok) {
         const data = await response.json()
-        console.log('Found user by custody address:', data)
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Found user by custody address:', data)
+        }
         return NextResponse.json({
           fid: data.fid,
           username: data.username,
@@ -81,10 +84,14 @@ export async function GET(request: NextRequest) {
         })
       } else {
         const errorText = await response.text()
-        console.log('Custody lookup failed:', response.status, errorText)
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Custody lookup failed:', response.status, errorText)
+        }
       }
     } catch (custodyError) {
-      console.log('Custody address lookup error:', custodyError)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Custody address lookup error:', custodyError)
+      }
     }
 
     // Method 2: Try search by verified addresses (original method)
@@ -98,7 +105,9 @@ export async function GET(request: NextRequest) {
     )
 
     if (!searchResponse.ok) {
-      console.error('Neynar API error:', searchResponse.statusText)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Neynar API error:', searchResponse.statusText)
+      }
       
       // Handle 402 Payment Required / Rate Limit
       if (searchResponse.status === 402) {
@@ -123,13 +132,17 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await searchResponse.json()
-    console.log('Neynar search response:', data)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Neynar search response:', data)
+    }
     
     // Neynar returns users array
     const users = data.users || []
     
     if (!users || users.length === 0) {
-      console.log('No users found for address:', address)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('No users found for address:', address)
+      }
       return NextResponse.json(
         { error: 'No FarCaster account found for this address' },
         { status: 404 }
@@ -144,21 +157,28 @@ export async function GET(request: NextRequest) {
     )
 
     if (!user) {
-      console.log('No user with verified address found:', address)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('No user with verified address found:', address)
+      }
       return NextResponse.json(
         { error: 'No FarCaster account found for this address' },
         { status: 404 }
       )
     }
 
-    console.log('Found FID:', user.fid)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Found FID:', user.fid)
+    }
     return NextResponse.json({
       fid: user.fid,
       username: user.username,
       displayName: user.display_name,
     })
   } catch (error) {
-    console.error('Error in fid-from-address route:', error)
+    // Only log errors in non-production environments
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Error in fid-from-address route:', error)
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

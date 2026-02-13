@@ -7,17 +7,80 @@
 
 import { useEffect, useState, useCallback } from 'react';
 
-// Dynamic import of SDK to avoid SSR issues
-let sdk: any = null;
+// ============================================================================
+// SDK Type Definitions
+// ============================================================================
 
-async function getSdk() {
-  if (sdk) return sdk;
+/**
+ * Minimal type definition for FarCaster SDK
+ * Based on official SDK documentation
+ */
+interface FarCasterSDK {
+  actions?: {
+    ready?: () => Promise<void>;
+    close?: () => void;
+  };
+  isInMiniApp?: () => boolean;
+  getContext?: () => Promise<{
+    fid: number;
+    username?: string;
+    displayName?: string;
+    pfp?: { url: string };
+    profile?: { bio?: { text: string } };
+  }>;
+  wallet?: {
+    connect?: () => Promise<{
+      address: string;
+      chainId?: number;
+    }>;
+    disconnect?: () => Promise<void>;
+    switchChain?: (chainId: number) => Promise<void>;
+    sendTransaction?: (params: {
+      to: string;
+      value: string;
+      data?: string;
+    }) => Promise<string>;
+  };
+  getCapabilities?: () => Promise<{
+    supportedChains: Array<{
+      id: number;
+      name: string;
+      nativeCurrency: {
+        name: string;
+        symbol: string;
+        decimals: number;
+      };
+      rpcUrls: {
+        default: {
+          http: string[];
+        };
+      };
+      blockExplorers?: {
+        default: {
+          url: string;
+          name: string;
+        };
+      };
+    }>;
+    features: {
+      signMessage: boolean;
+      signTypedData: boolean;
+      sendTransaction: boolean;
+    };
+  }>;
+}
+
+// Dynamic import of SDK to avoid SSR issues
+let sdkInstance: FarCasterSDK | null = null;
+
+async function getSdk(): Promise<FarCasterSDK | null> {
+  if (sdkInstance) return sdkInstance;
   
   if (typeof window !== 'undefined') {
     try {
       const miniappsdk = await import('@farcaster/miniapp-sdk');
-      sdk = miniappsdk.sdk || miniappsdk;
-      return sdk;
+      sdkInstance = (miniappsdk.sdk || miniappsdk) as unknown as FarCasterSDK;
+      return sdkInstance;
     } catch (err) {
       console.warn('Failed to load FarCaster SDK:', err);
       return null;

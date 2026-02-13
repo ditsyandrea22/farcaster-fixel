@@ -4,6 +4,16 @@ const MINI_APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://farcaster-fixel
 const NFT_CONTRACT = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xBee2A3b777445E212886815A5384f6F4e8902d21'
 const MINT_PRICE = '0.0002'
 
+// Helper function to escape HTML special characters
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 // Validate FID parameter
 function isValidFid(fid: string): boolean {
   const num = parseInt(fid, 10)
@@ -23,6 +33,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Escape FID for safe HTML insertion
+    const escapedFid = escapeHtml(String(fid))
+    
     // Generate Frame HTML response with OG meta tags for better preview
     const frameHtml = `
       <!DOCTYPE html>
@@ -38,7 +51,7 @@ export async function POST(request: NextRequest) {
           <meta property="fc:frame:image:aspect_ratio" content="1:1" />
           <meta property="fc:frame:button:1" content="Open Mini App" />
           <meta property="fc:frame:button:1:action" content="link" />
-          <meta property="fc:frame:button:1:target" content="${MINI_APP_URL}/mint?fid=${fid}" />
+          <meta property="fc:frame:button:1:target" content="${MINI_APP_URL}/mint?fid=${escapedFid}" />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:image" content="${MINI_APP_URL}/og.png" />
         </head>
@@ -85,6 +98,9 @@ export async function GET(request: NextRequest) {
     })
   }
 
+  // Escape FID for safe HTML insertion
+  const escapedFid = escapeHtml(fid)
+  
   const frameHtml = `
     <!DOCTYPE html>
     <html>
@@ -99,7 +115,7 @@ export async function GET(request: NextRequest) {
         <meta property="fc:frame:image:aspect_ratio" content="1:1" />
         <meta property="fc:frame:button:1" content="Mint on Base" />
         <meta property="fc:frame:button:1:action" content="link" />
-        <meta property="fc:frame:button:1:target" content="${MINI_APP_URL}/mint?fid=${fid}" />
+        <meta property="fc:frame:button:1:target" content="${MINI_APP_URL}/mint?fid=${escapedFid}" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="${MINI_APP_URL}/og.png" />
       </head>

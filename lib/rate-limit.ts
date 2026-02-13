@@ -59,8 +59,11 @@ export { defaultConfig, strictConfig, generousConfig }
 // Rate Limiting Implementation (In-Memory Fallback with Auto-Cleanup)
 // ============================================================================
 
-// In-memory store with automatic cleanup
+// In-memory store with automatic cleanup and size limit
 const ipCache = new Map<string, { count: number; resetTime: number }>()
+
+// Maximum cache entries to prevent memory exhaustion
+const MAX_CACHE_SIZE = 10000
 
 // Cleanup interval in milliseconds (every 5 minutes)
 const CLEANUP_INTERVAL = 5 * 60 * 1000
@@ -91,7 +94,7 @@ function initializeCleanup() {
 }
 
 /**
- * In-memory rate limiter implementation
+ * In-memory rate limiter implementation with size limit
  */
 function getInMemoryRateLimit(
   ip: string,
@@ -101,7 +104,13 @@ function getInMemoryRateLimit(
   const existing = ipCache.get(ip)
 
   if (!existing || now > existing.resetTime) {
-    // New request or expired window
+    // New request or expired window - check cache size first
+    if (ipCache.size >= MAX_CACHE_SIZE) {
+      // Remove oldest entries to make room
+      const oldestKeys = Array.from(ipCache.keys()).slice(0, Math.floor(MAX_CACHE_SIZE * 0.2))
+      oldestKeys.forEach(key => ipCache.delete(key))
+    }
+    
     ipCache.set(ip, {
       count: 1,
       resetTime: now + config.windowMs,

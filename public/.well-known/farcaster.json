@@ -6,7 +6,7 @@
   },
 
   "name": "Fixel FID",
-  "icon": "https://farcaster-fixel.vercel.app/icon.png",
+  "icon": "https://farcaster-fixel.vercel.app/Legendary Lucker.png",
   "description": "Mint pixel NFTs generated from your Farcaster FID on Base",
   "category": "art",
   "website": "https://farcaster-fixel.vercel.app",
@@ -17,11 +17,11 @@
     "version": "1",
 
     "name": "Fixel FID",
-    "iconUrl": "https://farcaster-fixel.vercel.app/icon.png",
+    "iconUrl": "https://farcaster-fixel.vercel.app/Legendary Lucker.png",
 
     "homeUrl": "https://farcaster-fixel.vercel.app",
 
-    "imageUrl": "https://farcaster-fixel.vercel.app/mint-card-bg.png",
+    "imageUrl": "https://farcaster-fixel.vercel.app/Pixel Pioneer.png",
     "imageAspectRatio": "1:1",
 
     "buttonTitle": "Mint NFT",
@@ -45,7 +45,7 @@
     "heroImageUrl": "https://farcaster-fixel.vercel.app/hero.png",
 
     "screenshotUrls": [
-      "https://farcaster-fixel.vercel.app/screenshots/1.png",
+      "https://farcaster-fixel.vercel.app/screenshots/splash.png",
       "https://farcaster-fixel.vercel.app/screenshots/2.png"
     ],
 

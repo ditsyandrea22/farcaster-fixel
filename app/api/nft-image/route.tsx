@@ -337,7 +337,9 @@ export async function GET(request: NextRequest) {
       if (ipfsResult.success && ipfsResult.ipfsHash) {
         ipfsHash = ipfsResult.ipfsHash
         ipfsGatewayUrl = ipfsResult.gatewayUrl || null
-        console.log(`✅ NFT image uploaded to IPFS: ${ipfsHash}`)
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`✅ NFT image uploaded to IPFS: ${ipfsHash}`)
+        }
       } else {
         console.warn('⚠️ Failed to upload image to IPFS, using dynamic URL')
       }
