@@ -199,7 +199,7 @@ export function hashAddress(address: string): number | null {
 export function generateRandomSeed(): number {
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
     const array = new BigUint64Array(1)
-    crypto.getRandomValues(array as unknown as Uint8Array)
+    crypto.getRandomValues(new Uint8Array(array.buffer))
     return Number(array[0] % BigInt(1000000))
   }
   return Math.floor(Math.random() * 1000000)

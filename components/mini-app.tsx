@@ -13,7 +13,7 @@ import { Card } from '@/components/ui/card'
 import Link from 'next/link'
 import { AlertCircle, Loader2, CheckCircle2, Wallet, Sparkles, RefreshCw, Globe, Shield, Terminal as TerminalIcon, ArrowLeft, Zap, Terminal } from 'lucide-react'
 import styles from '@/styles/animations.module.css'
-import { RARITY_TIERS, type RarityTier, determineRarityFromAddress, getTierProperties, getFortuneMessage, generateSerialNumber } from '@/lib/rarity'
+import { RARITY_TIERS, type RarityTier, determineRarity, determineRarityFromAddress, getTierProperties, getFortuneMessage, generateSerialNumber, generateRandomSeed, hashAddress } from '@/lib/rarity'
 import Confetti from 'react-confetti'
 import canvasConfetti from 'canvas-confetti'
 
@@ -240,19 +240,12 @@ export function MiniApp() {
     setTxStatus('idle')
   }, [])
 
-  function hashAddress(addr: string): bigint {
-    let hash = BigInt(0)
-    for (let i = 0; i < addr.length; i++) {
-      const char = BigInt(addr.charCodeAt(i))
-      hash = (hash << BigInt(5)) - hash + char
-      hash = hash & hash
-    }
-    return (hash % BigInt(20000)) + BigInt(1)
-  }
-
   const getEffectiveFid = (): number => {
     if (fid && fid > 0) return fid
-    if (walletAddress) return Number(hashAddress(walletAddress))
+    if (walletAddress) {
+      const hashed = hashAddress(walletAddress)
+      return hashed !== null ? hashed : 0
+    }
     return 0
   }
 
@@ -273,19 +266,14 @@ export function MiniApp() {
     if (!walletAddress) { setError('Wallet not connected'); setIsGenerating(false); return }
     if (hasMinted) { setError('You have already minted an NFT with this wallet'); setIsGenerating(false); return }
     
-    const walletRarity = determineRarityFromAddress(walletAddress)
-    
-    // Handle invalid wallet address (should not happen with valid wallet)
-    if (!walletRarity) {
-      setError('Invalid wallet address'); 
-      setIsGenerating(false)
-      return
-    }
+    // Use truly random seed for fair distribution on each mint
+    const randomSeed = generateRandomSeed()
+    const walletRarity = determineRarity(randomSeed)
     
     setRarity(walletRarity)
     setRevealedRarity(walletRarity)
     setFortuneMessage(getFortuneMessage(walletRarity))
-    const imageUrl = fid ? `/api/nft-image?fid=${fid}` : `/api/nft-image?address=${walletAddress}`
+    const imageUrl = `/api/nft-image?random=true&seed=${randomSeed}`
     setNftImageUrl(imageUrl)
     try {
       const hash = await writeContractWithGas({
@@ -408,7 +396,7 @@ export function MiniApp() {
             <TerminalWindow className="mb-4">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 pointer-events-none"></div>
-                <img src={nftImageUrl || "/placeholder.svg"} alt="Your AI NFT" className="w-full h-auto" />
+                <img src={nftImageUrl && nftImageUrl.trim() ? nftImageUrl : "/placeholder.svg"} alt="Your AI NFT" className="w-full h-auto" />
               </div>
               <div className="pt-3 border-t" style={{ borderColor: '#333333' }}>
                 <div className="flex items-center gap-2 mb-2">
@@ -462,7 +450,7 @@ export function MiniApp() {
                 <Sparkles size={32} style={{ color: '#e95420' }} />
               </div>
               <p className="font-mono text-sm text-white mb-2">Your Fortune Awaits</p>
-              <p className="text-gray-500 font-mono text-xs mb-4">Click below to reveal your NFT rarity based on your wallet is destiny</p>
+              <p className="text-gray-500 font-mono text-xs mb-4">Click below to reveal your NFT rarity - truly random on each mint!</p>
               <div className="grid grid-cols-2 gap-2 font-mono text-xs w-full mb-4">
                 <div className="flex items-center gap-1 p-2 rounded" style={{ backgroundColor: THEME.bgTertiary }}><span className="text-purple-400">💎</span><span className="text-purple-400">PLATINUM</span><span className="text-gray-600 ml-auto">0.01%</span></div>
                 <div className="flex items-center gap-1 p-2 rounded" style={{ backgroundColor: THEME.bgTertiary }}><span className="text-yellow-400">👑</span><span className="text-yellow-400">GOLD</span><span className="text-gray-600 ml-auto">0.99%</span></div>
@@ -535,7 +523,7 @@ export function MiniApp() {
             <div className="overflow-hidden rounded-lg mb-4 transition-all duration-500" style={currentStyle}>
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 pointer-events-none"></div>
-                <img src={nftImageUrl || "/placeholder.svg"} alt="Your AI NFT" className="w-full h-auto" />
+                <img src={nftImageUrl && nftImageUrl.trim() ? nftImageUrl : "/placeholder.svg"} alt="Your AI NFT" className="w-full h-auto" />
               </div>
               <div className="p-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
                 <div className="flex items-center justify-center gap-2 mb-2">
@@ -606,7 +594,7 @@ export function MiniApp() {
           <div className="overflow-hidden rounded-lg mb-4 transition-all duration-500" style={getRarityStyle(rarity)}>
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 pointer-events-none"></div>
-              <img src={nftImageUrl || "/placeholder.svg"} alt="Your Minted NFT" className="w-full h-auto" />
+              <img src={nftImageUrl && nftImageUrl.trim() ? nftImageUrl : "/placeholder.svg"} alt="Your Minted NFT" className="w-full h-auto" />
               <div className="absolute top-2 right-2 px-3 py-1 rounded-full flex items-center gap-1 shadow-lg" style={{ backgroundColor: '#0e8420' }}>
                 <CheckCircle2 size={14} className="text-white" />
                 <span className="font-mono text-xs font-bold text-white">MINTED</span>

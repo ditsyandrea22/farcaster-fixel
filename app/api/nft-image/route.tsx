@@ -43,31 +43,34 @@ export async function GET(request: NextRequest) {
 
     const fid = request.nextUrl.searchParams.get('fid')
     const address = request.nextUrl.searchParams.get('address')
+    const seedParam = request.nextUrl.searchParams.get('seed')
     const tokenIdParam = request.nextUrl.searchParams.get('tokenId')
     const randomize = request.nextUrl.searchParams.get('random') === 'true'
 
-    if (!fid && !address && !tokenIdParam) {
-      return NextResponse.json({ error: 'FID or wallet address is required' }, { status: 400 })
+    if (!fid && !address && !tokenIdParam && !seedParam) {
+      return NextResponse.json({ error: 'FID, wallet address, tokenId, or seed is required' }, { status: 400 })
     }
 
-    // Use FID if available, otherwise use address or generate random
+    // Use provided seed if available
     let seed: number
     let walletDisplay: string
     
-    // Parse and validate tokenId
-    let tokenId: number | null = null
-    if (tokenIdParam) {
+    if (seedParam) {
+      const parsedSeed = parseInt(seedParam, 10)
+      if (!isNaN(parsedSeed) && parsedSeed >= 0 && parsedSeed <= 999999) {
+        seed = parsedSeed
+        walletDisplay = 'Random Seed'
+      } else {
+        return NextResponse.json({ error: 'Invalid seed value' }, { status: 400 })
+      }
+    } else if (tokenIdParam) {
       const parsedTokenId = parseInt(tokenIdParam, 10)
       if (!isNaN(parsedTokenId) && parsedTokenId > 0) {
-        tokenId = parsedTokenId
+        seed = parsedTokenId
+        walletDisplay = `Token #${parsedTokenId}`
       } else {
         return NextResponse.json({ error: 'Invalid token ID' }, { status: 400 })
       }
-    }
-    
-    if (tokenId) {
-      seed = tokenId
-      walletDisplay = `Token #${tokenId}`
     } else if (randomize) {
       seed = generateRandomSeed()
       walletDisplay = fid ? `FID ${fid}` : (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Unknown')
@@ -79,12 +82,15 @@ export async function GET(request: NextRequest) {
       seed = hashedFid
       walletDisplay = `FID ${fid}`
     } else {
-      const hashedAddress = hashAddress(address!)
+      if (!address) {
+        return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 })
+      }
+      const hashedAddress = hashAddress(address)
       if (hashedAddress === null) {
         return NextResponse.json({ error: 'Invalid wallet address format' }, { status: 400 })
       }
       seed = hashedAddress
-      walletDisplay = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Unknown'
+      walletDisplay = `${address.slice(0, 6)}...${address.slice(-4)}`
     }
 
     const rarity = determineRarity(seed)
@@ -324,7 +330,7 @@ export async function GET(request: NextRequest) {
 
     if (isPinataConfigured()) {
       const ipfsResult = await uploadImageToIPFS(imageBuffer, {
-        name: `pixelcaster-image-${tokenId || fid || address || seed}`,
+        name: `pixelcaster-image-${seed}`,
         contentType: 'image/png',
       })
 

@@ -96,7 +96,10 @@ export async function GET(request: NextRequest) {
         }
         seed = hashedFid
       } else {
-        const hashedAddress = hashAddress(address!)
+        if (!address) {
+          return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 })
+        }
+        const hashedAddress = hashAddress(address)
         if (hashedAddress === null) {
           return NextResponse.json({ error: 'Invalid wallet address format' }, { status: 400 })
         }
