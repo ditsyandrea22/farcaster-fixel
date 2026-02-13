@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { sdk } from "@farcaster/miniapp-sdk";
+import Head from "next/head";
 
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -43,10 +44,22 @@ export default function MintPage() {
   }
 
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <MiniApp />
-      </QueryClientProvider>
-    </WagmiProvider>
+    <>
+      <Head>
+        <style>{`
+          * {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
+          }
+          h1, h2, h3, h4, h5, h6, p, span, div, a, button, li, td, th {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
+          }
+        `}</style>
+      </Head>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <MiniApp />
+        </QueryClientProvider>
+      </WagmiProvider>
+    </>
   );
 }

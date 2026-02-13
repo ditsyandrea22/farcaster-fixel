@@ -131,6 +131,14 @@ export default function Home() {
     <>
       <Head>
         <meta name="base:app_id" content="6989f2196dea3c7b8e14a0d9" />
+        <style>{`
+          * {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
+          }
+          h1, h2, h3, h4, h5, h6, p, span, div, a, button, li, td, th {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
+          }
+        `}</style>
       </Head>
       <div className="min-h-screen" style={{ backgroundColor: THEME.bg }}>
         <nav className="sticky top-0 z-50 border-b-2" style={{ backgroundColor: THEME.bgSecondary, borderColor: THEME.accent }}>
@@ -159,7 +167,7 @@ export default function Home() {
               Generate & Mint{" "}
               <span style={{ color: THEME.accent }}>Pixel NFTs</span>
               <br />
-              <span className="text-3xl lg:text-5xl" style={{ color: THEME.textMuted }}>from FarCaster</span>
+              <span className="text-3xl lg:text-5xl" style={{ color: THEME.textMuted }}>from Base Mainet</span>
             </h2>
 
             <p className="text-xl max-w-2xl mx-auto font-mono" style={{ color: THEME.textMuted }}>
