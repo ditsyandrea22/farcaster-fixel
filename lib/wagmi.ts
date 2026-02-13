@@ -3,6 +3,18 @@ import { base } from "wagmi/chains";
 import { farcasterFrame } from "@farcaster/miniapp-wagmi-connector";
 import { injected, coinbaseWallet } from "wagmi/connectors";
 
+// Base Builder Code Attribution (ERC-7739)
+// Get your Builder Code from https://base.dev > Settings > Builder Codes
+const BUILDER_CODE = process.env.NEXT_PUBLIC_BASE_BUILDER_CODE || "bc_cir668rj";
+
+// ERC-7739/ERC-8021 Data Suffix for Builder Code
+function createBuilderCodeDataSuffix(builderCode: string): `0x${string}` {
+  // The data suffix is the builder code prefixed with 0x
+  return `0x${builderCode.replace(/^0x/, '')}` as `0x${string}`;
+}
+
+const DATA_SUFFIX = createBuilderCodeDataSuffix(BUILDER_CODE);
+
 // Base mainnet RPC - can be overridden with environment variable
 const BASE_RPC_URL = process.env.NEXT_PUBLIC_BASE_RPC_URL || 
   process.env.NEXT_ALCHEMY_API_KEY ? 
@@ -69,6 +81,7 @@ export async function getWagmiConfig() {
       transports: {
         [base.id]: BASE_RPC_URL ? http(BASE_RPC_URL) : http(),
       },
+      dataSuffix: DATA_SUFFIX,
     });
     
     configInitialized = true;
