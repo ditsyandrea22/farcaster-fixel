@@ -20,11 +20,11 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || DEFAULT_BASE_URL
 
 // Static image mapping for each rarity (matching the preview in page.tsx)
 const RARITY_IMAGES: Record<RarityTier, string> = {
-  COMMON: '/Pixel Pioneer.png',
+  COMMON: '/Pixel-Pioneer.png',
   UNCOMMON: '/Crypto Explorer.png',
   SILVER: '/Silver Surfer.png',
   GOLD: '/Golden Goose.png',
-  PLATINUM: '/Legendary Lucker.png',
+  PLATINUM: '/Legendary-Lucker.png',
 }
 
 // Warn if using default URL in production

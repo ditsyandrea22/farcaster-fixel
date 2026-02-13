@@ -33,11 +33,11 @@ const THEME = {
 
 // Sample NFT data for preview gallery with local image paths
 const SAMPLE_NFTS = [
-  { id: 1, seed: 12345, rarity: "COMMON" as const, name: "Pixel Pioneer", image: "/Pixel Pioneer.png" },
+  { id: 1, seed: 12345, rarity: "COMMON" as const, name: "Pixel Pioneer", image: "/Pixel-Pioneer.png" },
   { id: 2, seed: 54321, rarity: "UNCOMMON" as const, name: "Crypto Explorer", image: "/Crypto Explorer.png" },
   { id: 3, seed: 11111, rarity: "SILVER" as const, name: "Silver Surfer", image: "/Silver Surfer.png" },
   { id: 4, seed: 99999, rarity: "GOLD" as const, name: "Golden Goose", image: "/Golden Goose.png" },
-  { id: 5, seed: 88888, rarity: "PLATINUM" as const, name: "Legendary Lucker", image: "/Legendary Lucker.png" },
+  { id: 5, seed: 88888, rarity: "PLATINUM" as const, name: "Legendary Lucker", image: "/Legendary-Lucker.png" },
 ];
 
 // Rarity configuration for display
