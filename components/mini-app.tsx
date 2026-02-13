@@ -356,10 +356,12 @@ export function MiniApp() {
                 </div>
               )}
               <div className="w-full space-y-2">
-              <Button onClick={() => connect(connectors[0])} disabled={isConnecting} className="w-full font-mono font-bold flex items-center justify-center gap-2 transition-all duration-300" style={{ backgroundColor: '#e95420', color: '#ffffff', border: '2px solid #e95420' }} size="lg">
-                    {isConnecting ? <Loader2 className="animate-spin" size={18} /> : <Wallet size={18} />}
-                    Connect Wallet
+                {connectors.map((connector) => (
+                  <Button key={connector.uid} onClick={() => connect(connector)} disabled={isConnecting} className="w-full font-mono font-bold flex items-center justify-center gap-2 transition-all duration-300" style={{ backgroundColor: '#e95420', color: '#ffffff', border: '2px solid #e95420' }} size="lg">
+                    {isConnecting && connectors.some(c => c.uid === connector.uid) ? <Loader2 className="animate-spin" size={18} /> : <Wallet size={18} />}
+                    {connector.name}
                   </Button>
+                ))}
                 <p className="text-center text-gray-600 font-mono text-xs mt-4"> Make sure you have a wallet installed</p>
               </div>
               {!isInMiniApp && (
