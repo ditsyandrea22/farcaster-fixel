@@ -15,9 +15,17 @@ import {
   Cpu,
   Wallet,
   ExternalLink,
+  Trophy,
+  Grid,
+  Award,
+  Flame,
 } from "lucide-react";
 import Link from "next/link";
 import styles from "@/styles/animations.module.css";
+import { LiveMintFeed } from "@/components/live-mint-feed";
+import { ReferralSystem } from "@/components/referral-system";
+import { DailyFortune } from "@/components/daily-fortune";
+import { MintStreak } from "@/components/mint-streak";
 
 // Ubuntu Terminal Theme Colors
 const THEME = {
@@ -174,6 +182,11 @@ export default function Home() {
               Connect your wallet, auto-detect your FarCaster identity, and instantly mint unique pixel art NFTs on Base with AI-powered generation.
             </p>
 
+            {/* Live Mint Feed */}
+            <div className="max-w-md mx-auto mt-8">
+              <LiveMintFeed />
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
               <Link href="/mint">
                 <Button className="font-mono font-bold px-8 py-4 text-lg rounded-lg flex items-center gap-2 transition-all duration-300 hover:scale-105" style={{ backgroundColor: THEME.accent, color: "#ffffff", border: `2px solid ${THEME.accent}` }}>
@@ -185,6 +198,33 @@ export default function Home() {
               <Link href="/learn">
                 <Button variant="outline" className="px-8 py-4 text-lg rounded-lg font-mono transition-all duration-300" style={{ borderColor: THEME.border, color: THEME.textMuted }}>
                   ./learn.sh
+                </Button>
+              </Link>
+            </div>
+
+            <div className="flex flex-wrap gap-3 justify-center pt-4">
+              <Link href="/gallery">
+                <Button variant="outline" className="px-6 py-3 text-base rounded-lg font-mono transition-all duration-300" style={{ borderColor: THEME.border, color: THEME.textMuted }}>
+                  <Grid size={18} className="mr-2" />
+                  ./gallery.sh
+                </Button>
+              </Link>
+              <Link href="/leaderboard">
+                <Button variant="outline" className="px-6 py-3 text-base rounded-lg font-mono transition-all duration-300" style={{ borderColor: THEME.border, color: THEME.textMuted }}>
+                  <Trophy size={18} className="mr-2" />
+                  ./leaderboard.sh
+                </Button>
+              </Link>
+              <Link href="/achievements">
+                <Button variant="outline" className="px-6 py-3 text-base rounded-lg font-mono transition-all duration-300" style={{ borderColor: THEME.border, color: THEME.textMuted }}>
+                  <Award size={18} className="mr-2" />
+                  ./achievements.sh
+                </Button>
+              </Link>
+              <Link href="/burn">
+                <Button variant="outline" className="px-6 py-3 text-base rounded-lg font-mono transition-all duration-300" style={{ borderColor: THEME.accent, color: THEME.accent }}>
+                  <Flame size={18} className="mr-2" />
+                  ./burn-upgrade.sh
                 </Button>
               </Link>
             </div>
@@ -202,6 +242,28 @@ export default function Home() {
                 <p className="font-mono text-sm" style={{ color: THEME.textMuted }}>{feature.desc}</p>
               </TerminalWindow>
             ))}
+          </div>
+
+          {/* Daily Fortune & Referral Section */}
+          <div className="py-16">
+            <h3 className="text-3xl font-bold text-white font-mono text-center mb-8">
+              <span style={{ color: THEME.accent }}>&gt;</span> Daily Rewards & Referrals
+            </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <DailyFortune />
+              </div>
+              <div>
+                <ReferralSystem />
+              </div>
+            </div>
+          </div>
+
+          {/* Mint Streak */}
+          <div className="py-8">
+            <div className="max-w-md mx-auto">
+              <MintStreak />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 py-16 items-center">
@@ -284,6 +346,24 @@ export default function Home() {
         </main>
 
         <footer className="border-t py-8 text-center" style={{ backgroundColor: THEME.bgSecondary, borderColor: THEME.border }}>
+          <div className="flex items-center justify-center gap-6 mb-6">
+            <Link href="/gallery" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+              <Grid size={18} />
+              <span className="font-mono text-sm">Gallery</span>
+            </Link>
+            <Link href="/leaderboard" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+              <Trophy size={18} />
+              <span className="font-mono text-sm">Leaderboard</span>
+            </Link>
+            <Link href="/achievements" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors">
+              <Award size={18} />
+              <span className="font-mono text-sm">Achievements</span>
+            </Link>
+            <Link href="/burn" className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors" style={{ color: THEME.accent }}>
+              <Flame size={18} />
+              <span className="font-mono text-sm">Burn & Upgrade</span>
+            </Link>
+          </div>
           <div className="flex items-center justify-center gap-2 mb-4">
             <Terminal size={20} style={{ color: THEME.accent }} />
             <span className="font-mono font-bold text-white">Fixel FID</span>

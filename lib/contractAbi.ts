@@ -69,8 +69,12 @@ export const NFT_ABI = [
   { inputs: [], name: "withdraw", outputs: [], stateMutability: "nonpayable", type: "function" }
 ] as const
 
-// Contract address
-export const CONTRACT_ADDRESS = "0xBee2A3b777445E212886815A5384f6F4e8902d21"
+// Contract addresses
+// Use PROXY_ADDRESS for user-facing interactions (this is what users connect to)
+// Use CONTRACT_ADDRESS (implementation) only for upgradeability operations
+export const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || "0xBee2A3b777445E212886815A5384f6F4e8902d21" // Proxy - use this for all interactions
+export const IMPLEMENTATION_ADDRESS = "0x630cB19D8F4335f3B74d208033481A797f128Ada" // Implementation - for upgrades only
+export const PROXY_ADDRESS = "0xBee2A3b777445E212886815A5384f6F4e8902d21" // Proxy - kept for backwards compatibility
 
 // Rarity distribution constants for off-chain reference
 export const RARITY_DISTRIBUTION = {

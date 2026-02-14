@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -6,6 +6,14 @@ export const metadata: Metadata = {
 
   title: 'Fixel FID | Pixel NFT Mint',
   description: 'Generate and mint pixel NFTs from your FarCaster FID',
+
+  // PWA
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Fixel',
+  },
 
   openGraph: {
     title: 'Fixel Pixel NFTs',
@@ -20,6 +28,13 @@ export const metadata: Metadata = {
       }
     ]
   }
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({

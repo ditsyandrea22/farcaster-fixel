@@ -2,7 +2,7 @@ import { useAccount, useConnect, useDisconnect, useSwitchChain, useWriteContract
 import { useFarcasterWallet } from '@/lib/farcaster-sdk'
 import { base } from 'wagmi/chains'
 import { useCallback, useEffect, useState } from 'react'
-import { type WriteContractReturnType, encodeFunctionData, type Hex } from 'viem'
+import { type WriteContractReturnType, type Hex, type SimulateContractParameters } from 'viem'
 
 // Extend window interface for ethereum provider
 declare global {
@@ -167,32 +167,33 @@ export function useWallet() {
       args?: unknown[]
       value?: bigint
     }
-  ): Promise<WriteContractReturnType | undefined> => {
+  ): Promise<`0x${string}` | undefined> => {
     setIsEstimatingGas(true)
     setGasEstimateError(null)
     
     try {
       console.log(`Submitting NFT mint transaction with fixed gas limit: ${NFT_MINT_GAS_LIMIT.toString()}`)
       
-      // Use wagmi's writeContract with explicit gas limit
-      // This bypasses the wallet's gas estimation by providing a pre-calculated gas limit
+      // Build contract parameters - use const assertion for wagmi compatibility
       const contractParams = {
         address: params.address,
         abi: params.abi,
         functionName: params.functionName,
         args: params.args,
         gas: NFT_MINT_GAS_LIMIT,
-      }
+      } as const
       
       if (params.value !== undefined) {
-        ;(contractParams as { value?: bigint }).value = params.value
+        Object.assign(contractParams, { value: params.value })
       }
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const hash = await wagmiWriteContract(contractParams as any) as `0x${string}` | undefined
+      // Write contract - wagmi useWriteContract returns void, hash is stored in the hash state
+      await wagmiWriteContract(contractParams)
       
       setGasEstimate(NFT_MINT_GAS_LIMIT)
       setIsEstimatingGas(false)
+      
+      // Return the hash from state (set by wagmi after the transaction is submitted)
       return hash
     } catch (error) {
       setIsEstimatingGas(false)
@@ -201,7 +202,7 @@ export function useWallet() {
       console.error('Contract write failed:', error)
       throw error
     }
-  }, [wagmiWriteContract])
+  }, [wagmiWriteContract, hash])
 
   return {
     // Connection state

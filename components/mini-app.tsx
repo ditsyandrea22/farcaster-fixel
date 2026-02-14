@@ -16,6 +16,7 @@ import styles from '@/styles/animations.module.css'
 import { RARITY_TIERS, type RarityTier, determineRarity, determineRarityFromAddress, getTierProperties, getFortuneMessage, generateSerialNumber, generateRandomSeed, hashAddress } from '@/lib/rarity'
 import Confetti from 'react-confetti'
 import canvasConfetti from 'canvas-confetti'
+import { TwitterShare } from '@/components/twitter-share'
 
 export const NFT_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS || '0xBee2A3b777445E212886815A5384f6F4e8902d21'
 export const MINT_PRICE = '0.0002'
@@ -427,6 +428,12 @@ export function MiniApp() {
               <p className="text-gray-500 font-mono text-sm mt-1">Check your wallet for your new NFT</p>
             </div>
           </TerminalWindow>
+          {/* Twitter Share for Rare Mints */}
+          {(rarity === 'GOLD' || rarity === 'PLATINUM' || rarity === 'SILVER') && (
+            <TerminalWindow className="mb-4">
+              <TwitterShare rarity={rarity} address={address || undefined} />
+            </TerminalWindow>
+          )}
         </div>
       </div>
     )
