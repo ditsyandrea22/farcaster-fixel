@@ -33,8 +33,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 }
 
 export default function RootLayout({
@@ -54,9 +54,12 @@ export default function RootLayout({
 
         <meta property="base:app_id" content="6989f2196dea3c7b8e14a0d9" />
       </head>
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body className="min-h-screen bg-background font-sans antialiased overflow-x-hidden">
+      {/* Safe area padding for mobile browsers */}
+      <div style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)', minHeight: '100dvh' }}>
         {children}
-      </body>
+      </div>
+    </body>
     </html>
   )
 }
