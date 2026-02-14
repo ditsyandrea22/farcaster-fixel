@@ -117,6 +117,25 @@ function NFTPreviewCard({ nft, config }: { nft: typeof SAMPLE_NFTS[0]; config: t
 
 export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Get wallet address from localStorage (set by mini-app)
+  const [address, setAddress] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    const savedAddress = localStorage.getItem('wallet_address');
+    if (savedAddress && savedAddress.startsWith('0x')) {
+      setAddress(savedAddress);
+      setIsConnected(true);
+    } else {
+      // Try session storage
+      const sessionAddress = sessionStorage.getItem('wallet_address');
+      if (sessionAddress && sessionAddress.startsWith('0x')) {
+        setAddress(sessionAddress);
+        setIsConnected(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let called = false;
@@ -251,10 +270,10 @@ export default function Home() {
             </h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <DailyFortune />
+                <DailyFortune address={address || undefined} />
               </div>
               <div>
-                <ReferralSystem />
+                <ReferralSystem address={address || undefined} />
               </div>
             </div>
           </div>
@@ -262,7 +281,7 @@ export default function Home() {
           {/* Mint Streak */}
           <div className="py-8">
             <div className="max-w-md mx-auto">
-              <MintStreak />
+              <MintStreak address={address || undefined} />
             </div>
           </div>
 

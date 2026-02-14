@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
+export const dynamic = 'force-dynamic';
+
 // Types
 type RarityTier = "COMMON" | "UNCOMMON" | "SILVER" | "GOLD" | "PLATINUM";
 
@@ -76,6 +78,20 @@ export default function BurnPage() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const router = useRouter();
 
+  // Get wallet address from localStorage (set by mini-app) with fallback
+  useEffect(() => {
+    const savedAddress = localStorage.getItem('wallet_address');
+    if (savedAddress && savedAddress.startsWith('0x')) {
+      setWalletAddress(savedAddress);
+    } else {
+      // Try to get from session storage
+      const sessionAddress = sessionStorage.getItem('wallet_address');
+      if (sessionAddress && sessionAddress.startsWith('0x')) {
+        setWalletAddress(sessionAddress);
+      }
+    }
+  }, []);
+
   // Fetch user's NFTs from API
   const fetchUserNFTs = async (address: string) => {
     setLoadingNFTs(true);
@@ -107,36 +123,14 @@ export default function BurnPage() {
     }
   };
 
-  // Initial load - check for wallet connection
+  // Initial load - use wallet address from state
   useEffect(() => {
-    // Check localStorage for connected wallet
-    const stored = localStorage.getItem("walletAddress");
-    if (stored) {
-      setWalletAddress(stored);
-      fetchUserNFTs(stored);
+    if (walletAddress) {
+      fetchUserNFTs(walletAddress);
     } else {
       setLoading(false);
     }
-  }, []);
-
-  // Also check URL params for FID
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const fid = params.get("fid");
-    if (fid) {
-      // Try to get address from FID
-      fetch(`/api/fid-from-address?fid=${fid}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.address) {
-            setWalletAddress(data.address);
-            localStorage.setItem("walletAddress", data.address);
-            fetchUserNFTs(data.address);
-          }
-        })
-        .catch(console.error);
-    }
-  }, []);
+  }, [walletAddress]);
 
   const toggleNFT = (nft: NFT) => {
     if (selectedNFTs.find(n => n.id === nft.id)) {

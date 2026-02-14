@@ -5,28 +5,110 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { address, fid, action } = body;
+    const { address, fid, action, tier, streak } = body;
 
     if (!address) {
       return NextResponse.json({ error: 'Address is required' }, { status: 400 });
     }
 
+    const addressLower = address.toLowerCase();
+
     // Check if Supabase is configured
     if (!isSupabaseConfigured() || !supabase) {
       // Fallback to mock response if Supabase not configured
+      // For update_fortune, return success with the data that would be saved
+      if (action === 'update_fortune') {
+        return NextResponse.json({
+          address: addressLower,
+          fid: fid || null,
+          total_mints: 0,
+          total_referrals: 0,
+          current_streak: streak || 1,
+          longest_streak: streak || 1,
+          referral_code: `FIXEL-${address.slice(2, 8).toUpperCase()}`,
+          last_fortune_date: new Date().toISOString().split('T')[0],
+          last_mint_date: null,
+          message: 'Supabase not configured - fortune saved locally only'
+        });
+      }
+      
       return NextResponse.json({
-        address: address.toLowerCase(),
+        address: addressLower,
         fid: fid || null,
         total_mints: 0,
         total_referrals: 0,
         current_streak: 0,
         longest_streak: 0,
         referral_code: `FIXEL-${address.slice(2, 8).toUpperCase()}`,
+        last_fortune_date: null,
         message: 'Supabase not configured - using mock data'
       });
     }
 
-    const addressLower = address.toLowerCase();
+    // Handle update_fortune action
+    if (action === 'update_fortune') {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // First try to get existing profile
+      const { data: existing, error: fetchError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('address', addressLower)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      // Also save to daily_fortunes table for history
+      await supabase
+        .from('daily_fortunes')
+        .upsert({
+          address: addressLower,
+          tier: tier || 'COMMON',
+          streak: streak || 1,
+          draw_date: today,
+        }, {
+          onConflict: 'address,draw_date'
+        });
+
+      if (existing) {
+        // Update existing profile
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .update({
+            last_fortune_date: today,
+            current_streak: streak || 1,
+            longest_streak: Math.max(streak || 1, existing.longest_streak || 0),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('address', addressLower)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return NextResponse.json(data);
+      } else {
+        // Create new profile with fortune
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .insert({
+            address: addressLower,
+            fid: fid || null,
+            referral_code: `FIXEL-${address.slice(2, 8).toUpperCase()}`,
+            total_mints: 0,
+            total_referrals: 0,
+            current_streak: streak || 1,
+            longest_streak: streak || 1,
+            last_fortune_date: today,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        return NextResponse.json(data);
+      }
+    }
 
     if (action === 'increment_mint') {
       // Increment mint count and update streak
@@ -158,6 +240,7 @@ export async function GET(request: NextRequest) {
         current_streak: 0,
         longest_streak: 0,
         referral_code: `FIXEL-${address.slice(2, 8).toUpperCase()}`,
+        last_fortune_date: null,
         message: 'Supabase not configured'
       });
     }
@@ -184,6 +267,7 @@ export async function GET(request: NextRequest) {
       current_streak: 0,
       longest_streak: 0,
       referral_code: `FIXEL-${address.slice(2, 8).toUpperCase()}`,
+      last_fortune_date: null,
     });
 
   } catch (error: any) {

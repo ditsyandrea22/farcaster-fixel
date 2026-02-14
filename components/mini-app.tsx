@@ -223,7 +223,12 @@ export function MiniApp() {
   }, [userContext, walletAddress])
 
   useEffect(() => {
-    if (walletAddress) { setAddress(walletAddress) }
+    if (walletAddress) {
+      // Store wallet address for other pages to access
+      localStorage.setItem('wallet_address', walletAddress);
+      sessionStorage.setItem('wallet_address', walletAddress);
+      setAddress(walletAddress)
+    }
   }, [walletAddress])
 
   useEffect(() => {
