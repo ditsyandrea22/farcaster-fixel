@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Analytics } from "@vercel/analytics/next"
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -55,6 +56,7 @@ export default function RootLayout({
         <meta property="base:app_id" content="6989f2196dea3c7b8e14a0d9" />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased overflow-x-hidden">
+        <Analytics />
       {/* Safe area padding for mobile browsers */}
       <div style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)', minHeight: '100dvh' }}>
         {children}
